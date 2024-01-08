@@ -21,8 +21,8 @@ dbConnection()
 app.use(logger("combined"))
 app.use(cors({  
     origin: [
-        "admin.veguess.shop",
-        "veguess.shop",
+        "https://admin.veguess.shop",
+        "http://veguess.shop",
         "www.admin.veguess.shop",
         "www.veguess.shop"
     ],
