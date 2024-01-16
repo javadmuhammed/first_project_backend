@@ -221,9 +221,9 @@ let authController = {
 
     validateJWT: function (req, res) {
 
-        if ((req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') && (req.headers.refresh_reference)) {
+        if ((req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') && (req.headers.reference)) {
             let access_token = req.headers.authorization.split(' ')[1];
-            let refresh_reference = req.headers.refresh_reference;
+            let reference = req.headers.reference;
 
 
 
@@ -232,7 +232,7 @@ let authController = {
                     if (err) {
                         res.status(403).send({ status: false, error: true, msg: "Token is not valid" })
                     } else {
-                        commonHelper.findSingleUser(refresh_reference).then((user) => {
+                        commonHelper.findSingleUser(reference).then((user) => {
                             if (user) {
                                 res.status(200).send({ status: true, user, error: false, msg: "Token is   valid" })
                             } else {

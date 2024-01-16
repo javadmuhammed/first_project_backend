@@ -73,7 +73,7 @@ let cartController = {
 
         let cart_id = req.params.cart_id;
         let product_id = req.params.product_id;
-        let user_id = req.headers.refresh_reference;
+        let user_id = req.headers.reference;
 
 
 

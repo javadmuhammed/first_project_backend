@@ -95,11 +95,11 @@ router.post("/generate_sales_report_pdf", authMiddleWare.isValidAdmin, generateS
 router.get("/get_single_vendor", authMiddleWare.isValidAdmin, getSingleVendor)
 
 // Coupen Related
-router.get("/get_all_coupen_code", getAllCoupenCode)
-router.get("/get_single_coupen/:coupen_id", getSingleCoupen)
-router.post("/add_coupen_code", addCoupenCode)
-router.put("/edit_coupen_code", editCoupenCode)
-router.post("/delete_coupen_code", deleteCoupenCode)
+router.get("/get_all_coupen_code", authMiddleWare.isValidAdmin,getAllCoupenCode)
+router.get("/get_single_coupen/:coupen_id", authMiddleWare.isValidAdmin,getSingleCoupen)
+router.post("/add_coupen_code", authMiddleWare.isValidAdmin,addCoupenCode)
+router.put("/edit_coupen_code", authMiddleWare.isValidAdmin,editCoupenCode)
+router.post("/delete_coupen_code", authMiddleWare.isValidAdmin,deleteCoupenCode)
 
 
 module.exports = router;
