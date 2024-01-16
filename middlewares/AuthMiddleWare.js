@@ -52,6 +52,7 @@ let authMiddleWare = {
 
     isValidAdmin: (req, res, next) => {
         
+        console.log("all over req header", req.headers)
         console.log("Auth Token",req.headers.authorization)
         console.log("Reference Token", req.headers.refresh_reference)
 
