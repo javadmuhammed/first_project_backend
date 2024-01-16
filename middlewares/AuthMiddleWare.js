@@ -51,6 +51,10 @@ let authMiddleWare = {
 
 
     isValidAdmin: (req, res, next) => {
+        
+        console.log("Auth Token",req.headers.authorization)
+        console.log("Reference Token", req.headers.refresh_reference)
+
         if ((req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') && (req.headers.refresh_reference)) {
             let access_token = req.headers.authorization.split(' ')[1];
             let refresh_reference = req.headers.refresh_reference;
@@ -72,7 +76,7 @@ let authMiddleWare = {
                 res.status(403).send({ status: false, error: true, msg: "Unauthorized Access 2" })
             }
         } else {
-            console.log("Unauthorized Access 1")
+            console.log("Unauthorized Access 1- here")
             res.status(403).send({ status: false, error: true, msg: "Unauthorized Access 3" })
         }
     }
