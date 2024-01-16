@@ -9,8 +9,10 @@ let imageController = {
         let fileSize = req.body.file_size;
 
         adminHelper.uploadImage(image, fileSize).then((data) => {
+            console.log("Image upload succss")
             res.send({ status: true, error: false, msg: "Image Upload Success" })
         }).catch((err) => {
+            console.log(err)
             res.send({ status: false, error: true, msg: "Image Upload Failed" })
         })
     },
