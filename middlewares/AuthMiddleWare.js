@@ -60,7 +60,7 @@ let authMiddleWare = {
             try {
                 jwt.verify(access_token, process.env.JWT_SECRET, (err, data) => {
                     if (err) {
-                        console.log("Unauthorized Access 1")
+                        console.log("Unauthorized Access 1", err)
                         res.status(403).send({ status: false, error: true, msg: "Unauthorized Access 1" })
                     } else {
                         req.body.admin_id = refresh_reference;
