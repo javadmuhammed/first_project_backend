@@ -33,6 +33,7 @@ let imageController = {
 
 
     getAllImages: (req, res) => {
+        console.log("Get all images");
         adminHelper.getAllWebImages().then((data) => {
             res.send({ status: true, data })
         }).catch((err) => {
