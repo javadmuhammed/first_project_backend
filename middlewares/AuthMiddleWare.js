@@ -55,7 +55,7 @@ let authMiddleWare = {
             let access_token = req.headers.authorization.split(' ')[1];
             let refresh_reference = req.headers.refresh_reference;
  
-            console.log(access_token,refresh_reference)
+            console.log("Creditials is " + access_token + " " + refresh_reference)
 
             try {
                 jwt.verify(access_token, process.env.JWT_SECRET, (err, data) => {
