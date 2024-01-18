@@ -789,12 +789,15 @@ let userHelperMethod = {
                         }
                     }
                 },
+               
+                
+                 
                 {
                     $group: {
                         _id: null,
                         totalOffer: { $sum: { $toInt: '$productDetails.category_offer' } },
                         cartData: {
-                            $addToSet: {
+                            $push: {
                                 _id: '$_id',
                                 product_id: '$productDetails._id',
                                 quantity: '$products.quantity',
@@ -922,6 +925,11 @@ let userHelperMethod = {
                     },
                 },
                 {
+                    $sort: {
+                        'cartData.productDetails.name': 1  
+                    }
+                },
+                {
                     $project: {
                         _id: 0,
                         cartData: 1,
@@ -933,6 +941,7 @@ let userHelperMethod = {
                         },
                     }
                 },
+
                 // {
                 //     $replaceRoot: { newRoot: { $mergeObjects: [{ cartData: '$cartData' }, { priceList: '$priceList' }] } }
                 // }

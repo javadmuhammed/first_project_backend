@@ -35,6 +35,7 @@ let addressController = {
             console.log(data)
             res.send({ status: true, error: false, address_id: data._id })
         }).catch((err) => { 
+            console.log(err)
             res.send({ status: false, error: true, msg: err})
         })
 

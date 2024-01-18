@@ -1,4 +1,4 @@
-let axios = require("axios");
+let axios = require("axios").default
 const { urlencoded } = require("express");
 
 function sendOTPSMS(username, numbers, OTP) {
@@ -12,7 +12,10 @@ function sendOTPSMS(username, numbers, OTP) {
 
     let message = encodeURI(mess);
 
-    return fetch(`https://app.smsbits.in/api/web?id=${api_id}&senderid=${senderid}&to=${numbers}&msg=${message}&port=TA&dltid=${dltid}&tempid=${tempid}`)
+
+   
+
+    return axios.get(`https://app.smsbits.in/api/web?id=${api_id}&senderid=${senderid}&to=${numbers}&msg=${message}&port=TA&dltid=${dltid}&tempid=${tempid}`)
 }
 
 
