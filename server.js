@@ -8,19 +8,22 @@ const userRouter = require("./router/userRouter")
 const cors = require("cors")
 let logger = require("morgan")
 let fileUpload = require("express-fileupload");
-  
+
 env.config({ path: "./.env" })
- 
+
 
 dbConnection()
 
- 
+
 
 // app.use(logger("combined"))
-app.use(cors({  
+app.use(cors({
     origin: [
         "https://admin.veguess.shop",
         "http://veguess.shop",
+        "https://www.veguess.shop",
+        "http://www.veguess.shop",
+        "https://veguess.shop",
         "www.admin.veguess.shop",
         "www.veguess.shop",
         "http://localhost:3000",
