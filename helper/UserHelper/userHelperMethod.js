@@ -723,7 +723,7 @@ let userHelperMethod = {
 
 
     getCartItems: (userid) => {
-
+        
         return new Promise((resolve, reject) => {
             CartModel.aggregate([
                 {
@@ -967,9 +967,11 @@ let userHelperMethod = {
 
                     if (productExists) {
                         productExists.quantity++
+                        console.log(data)
                         data.save().then((pushed) => {
                             resolve(productExists.quantity)
                         }).catch((err) => {
+                            console.log(err)
                             reject("Something went wrong");
                         })
                     } else {

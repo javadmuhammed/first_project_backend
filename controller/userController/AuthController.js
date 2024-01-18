@@ -44,7 +44,7 @@ let authController = {
                                 data.access_token = token;
 
                                 if (data) {
-                                    user.access_token = token; 
+                                    user.access_token = token;
                                     return res.send({ status: true, error: false, user, msg: "Logging success" });
                                 } else {
                                     throw new Error("Something Went Wrong");
@@ -104,10 +104,8 @@ let authController = {
 
                 if (findUser != null) {
                     if (findUser.isOtpValidated) {
-                        res.render("/dashboard")
                         return res.send({ status: false, error: true, msg: "User Already Exits" });
                     } else {
-                        res.render("/login")
                         userData._id = findUser._id;
                     }
                 }
@@ -259,10 +257,15 @@ let authController = {
         UserModalDb.findById(referenceRefresh).then(async (user) => {
             if (user) {
                 try {
-                    let accessToken = await tokenHelper.TokenGenerator(user)
-                    let responseData = { status: true, token: accessToken, error: false }
-                    console.log(responseData)
-                    res.send(responseData)
+                    let accessToken = await tokenHelper.TokenGenerator({ name: user.name, _id: user._id })
+                    user.access_token = accessToken
+                    user.save().then(() => {
+                        let responseData = { status: true, token: accessToken, error: false }
+                        console.log(responseData)
+                        res.send(responseData)
+                    }).catch((err) => {
+                        res.send({ status: false, error: true })
+                    })
                 } catch (e) {
                     res.send({ status: false, error: true })
                 }
@@ -279,8 +282,8 @@ let authController = {
 
         commonHelper.getUserByJwt(jwt_token).then((user) => {
             res.send({ status: true, error: false, user })
-        }).catch((err)=>{
-            res.send({ status: false, error: true,})
+        }).catch((err) => {
+            res.send({ status: false, error: true, })
         })
     },
 

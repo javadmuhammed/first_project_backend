@@ -21,11 +21,12 @@ let cartController = {
 
 
     getCartItems: (req, res) => {
-        let userid = req.body.userid //"657b0d91a1259ffd72910138"  ;
-        
+        let userid =  req.body.userid   ;
+        console.log("Cart USerid", userid)
         userHelper.getCartItems(userid).then((data) => { 
             res.send({ status: true, error: false, cart: data })
         }).catch((err) => {
+            console.log(err)
             res.send({ status: false, error: true })
         })
     },
