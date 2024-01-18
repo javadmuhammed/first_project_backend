@@ -14,20 +14,17 @@ env.config({ path: "./.env" })
 
 dbConnection()
 
-
-
-// app.use(logger("combined"))
 app.use(cors({
     origin: [
-        "https://admin.veguess.shop",
-        "http://veguess.shop",
-        "https://www.veguess.shop",
-        "http://www.veguess.shop",
-        "https://veguess.shop",
-        "www.admin.veguess.shop",
-        "www.veguess.shop",
-        "http://localhost:3000",
-        "http://localhost:3001"
+        "https://admin.veguess.shop/",
+        "http://veguess.shop/",
+        "https://www.veguess.shop/", 
+        "http://www.veguess.shop/",
+        "https://veguess.shop/", 
+        "www.admin.veguess.shop/",
+        "www.veguess.shop/",
+        "http://localhost:3000/",
+        "http://localhost:3001/"
     ],
 }))
 
