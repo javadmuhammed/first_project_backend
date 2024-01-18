@@ -723,7 +723,7 @@ let userHelperMethod = {
 
 
     getCartItems: (userid) => {
-        
+
         return new Promise((resolve, reject) => {
             CartModel.aggregate([
                 {
@@ -1401,7 +1401,7 @@ let userHelperMethod = {
                                                     if (coupenAmount != 0) await generateIndividualCoupen(userid, "Purchase Reward", "Product Purchase Reward", coupenAmount, false, 1000, 10000, new Date(), new Date().setDate(new Date().getDate() + 10))
                                                 }
 
-                                            } catch (e) { 
+                                            } catch (e) {
                                                 console.log(e)
                                                 // resolve("Product orderd success");
                                             }
@@ -1822,8 +1822,12 @@ let userHelperMethod = {
 let userExternalHelper = {
     sendInvoiceOTP: (number, otp) => {
         console.log(number)
-        return new Promise((resolve, reject) => {
-            resolve("SMS Sended")
+        return new Promise((resolve, reject) => { 
+            smsAPI.sendOTPSMS("User", number, otp).then(() => {
+                resolve("SMS Sended")
+            }).catch((err) => {
+                reject("SMS Sending Failed")
+            })
             // twilioConfig.messages.create({
             //     body: ` Your OTP for the checkout invoice is: ${otp}. Please use this OTP to complete your transaction.
             //     Thank you for choosing our service!
