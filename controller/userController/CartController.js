@@ -3,7 +3,7 @@ let userHelper = require("../../helper/UserHelper/userHelperMethod")
 
 let cartController = {
     addToCart: (req, res) => {
-        
+
         let product_id = req.body.product_id
         let userid = req.body.userid
         let variation = req.body.variation;
@@ -21,10 +21,31 @@ let cartController = {
     },
 
 
+    wishlistToCart: (req, res) => {
+
+
+        let product_id = req.body.product_id
+        let userid = req.body.userid
+        let variation = req.body.variation;
+
+        userHelper.addToCart(product_id, userid, variation).then((quantity) => {
+            userHelper.deleteWishlist(product_id, userid).then(() => {
+                res.send({ status: true, error: false, product_id, msg: "Product sent to cart" })
+            }).catch((err) => {
+                res.send({ status: true, error: false, product_id, msg: "Product sent to cart." })
+            })
+        }).catch((err) => {
+            console.log(err)
+            res.send({ status: false, error: true, msg: err })
+        })
+
+    },
+
+
     getCartItems: (req, res) => {
-        let userid =  req.body.userid ;
+        let userid = req.body.userid;
         console.log("Cart USerid", userid)
-        userHelper.getCartItems(userid).then((data) => { 
+        userHelper.getCartItems(userid).then((data) => {
             res.send({ status: true, error: false, cart: data })
         }).catch((err) => {
             console.log(err)

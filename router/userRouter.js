@@ -78,6 +78,7 @@ router.delete('/delete_address/:address_id', authMiddleWare.isValidUser, address
 router.get("/cart_pricelist", authMiddleWare.isValidUser, cartController.getCartPriceList)
 router.get("/get_cart_items", authMiddleWare.isValidUser, cartController.getCartItems)
 router.post("/add_to_cart", authMiddleWare.isValidUser, cartController.addToCart)
+router.post("/wishlist_to_cart", authMiddleWare.isValidUser, cartController.wishlistToCart)
 router.patch("/cart_quanity_update", authMiddleWare.isValidUser, cartController.updateCartQuanity)
 router.patch("/cart_variation_update", authMiddleWare.isValidUser, cartController.updateCartVariation)
 router.delete("/clear_cart_items", authMiddleWare.isValidUser, cartController.clearCartItems)

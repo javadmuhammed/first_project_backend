@@ -547,6 +547,7 @@ let userHelperMethod = {
     },
 
     addToWishlist: (userid, product_id) => {
+        console.log(userid, product_id)
         return new Promise((resolve, reject) => {
             WishlistModel.findOne({ user_id: userid, product_id }).then((existItem) => {
                 if (existItem) {
@@ -564,8 +565,10 @@ let userHelperMethod = {
 
 
     getWishListItems: (userid) => {
+        console.log("Wish" +  userid)
         return new Promise((resolve, reject) => {
             WishlistModel.find({ user_id: userid }).populate("product_id").then((wishlistItems) => {
+                console.log("wishlist item " + wishlistItems)
                 resolve(wishlistItems)
             }).catch((err) => {
                 reject(err)
@@ -575,7 +578,8 @@ let userHelperMethod = {
 
     deleteWishlist: (product_id, user_id) => {
         return new Promise((resolve, reject) => {
-            WishlistModel.deleteOne({ user_id: user_id, product_id: new mongoose.Types.ObjectId(product_id) }).then(() => {
+            WishlistModel.deleteOne({ user_id: user_id, product_id: new mongoose.Types.ObjectId(product_id) }).then((dt) => {
+               console.log(dt)
                 resolve()
             }).catch((err) => {
                 reject(err)

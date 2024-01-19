@@ -42,7 +42,7 @@ let commonHelper = {
             }).then((data) => {
                 if (data) {
                     resolve(data)
-                }else{
+                } else {
                     reject("No data found")
                 }
             }).catch((err) => {
@@ -909,6 +909,13 @@ let commonHelper = {
         console.log(price, variation)
         return price
     },
+
+    generateUserName: (firstName, lastName) => {
+
+        let combination = firstName + lastName;
+
+        
+    }
 
 
 }

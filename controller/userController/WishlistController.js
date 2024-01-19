@@ -30,6 +30,7 @@ let wishlistController = {
         let product_id = req.params.product_id;
 
         userHelperMethod.deleteWishlist(product_id, user_id).then(() => {
+            console.log("Deleted " + user_id)
             res.send({ status: true, error: false, product_id })
         }).catch((err) => { 
             res.send({ status: false, error: true, msg: "Something went wrong" })
