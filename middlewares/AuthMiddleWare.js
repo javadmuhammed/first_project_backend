@@ -3,6 +3,7 @@ let jwt = require("jsonwebtoken");
 
 let authMiddleWare = {
     isValidUser: (req, res, next) => {
+        console.log("Headers")
         console.log(req.headers)
 
         if ((req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') && (req.headers.reference)) {

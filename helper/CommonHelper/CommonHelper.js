@@ -35,10 +35,16 @@ let commonHelper = {
 
     getUserByJwt: (jwt) => {
         return new Promise((resolve, reject) => {
-            UserModalDb.findOne({ access_token: jwt }).then((data) => {
-                console.log("JWT HERE123", jwt)
-                console.log(data)
-                resolve(data)
+            UserModalDb.findOne({
+                access_token: jwt, status: {
+                    $nin: ['false', false]
+                }
+            }).then((data) => {
+                if (data) {
+                    resolve(data)
+                }else{
+                    reject("No data found")
+                }
             }).catch((err) => {
                 reject(err)
             })
@@ -388,7 +394,7 @@ let commonHelper = {
 
                 if (ordersData) {
                     let productData = await ProductModel.findById(ordersData?.products?.product);
-                    ordersData.product = productData 
+                    ordersData.product = productData
 
 
                     let dateToFormat = new Date(ordersData?.order_date)
