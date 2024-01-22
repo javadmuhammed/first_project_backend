@@ -24,7 +24,9 @@ let authController = {
             console.log(user)
             if (user) {
 
-                if (user?.status == "false" || user?.staus == false) {
+
+                console.log(user)
+                if (user?.status === "false" || user?.staus === false) {
                     return res.send({ status: false, error: true, msg: "This account has been suspended!" })
                 }
                 if (user?.is_delete) {

@@ -46,8 +46,8 @@ router.post("/verify_wallet_order", authMiddleWare.isValidUser, WalletRelated.ve
 //Orders Related    
 router.get("/get_orders", authMiddleWare.isValidUser, orderController.getOrders)
 router.get("/get_orders_pagination/:page_number/:limit", authMiddleWare.isValidUser, orderController.getOrdersPagination)
-router.get("/get_single_order/:order_id", authMiddleWare.isValidUser, orderController.getSingleOrder)
-router.get("/get_order_by_number/:order_number", orderController.getSingleOrderByNumber);
+router.get("/get_single_order/:order_id", authMiddleWare.isValidUser,  orderController.getSingleOrder)
+router.get("/get_order_by_number/:order_number",authMiddleWare.isValidUser,  orderController.getSingleOrderByNumber);
 router.patch("/cancel_order", authMiddleWare.isValidUser, orderController.cancelOrder)
 router.post("/product_return_request", authMiddleWare.isValidUser, orderController.productReturnRequest);
 
@@ -67,7 +67,7 @@ router.delete("/delete_wishlist/:product_id", authMiddleWare.isValidUser, wishli
 
 //address related
 router.get('/get_addresses', authMiddleWare.isValidUser, addressController.getAddressList);
-router.get('/get_single_address/:address_id', authMiddleWare.isValidUser, addressController.getSingleAddress);
+router.get('/get_single_address/:address_id', authMiddleWare.isValidUser, authMiddleWare.isValidUser, addressController.getSingleAddress);
 router.post('/add_addresses', authMiddleWare.isValidUser, addressController.addAddress);
 router.put('/edit_addresses', authMiddleWare.isValidUser, addressController.editAddress);
 router.put('/set_address_primary', authMiddleWare.isValidUser, addressController.setAddressPrimary);
@@ -82,7 +82,7 @@ router.post("/wishlist_to_cart", authMiddleWare.isValidUser, cartController.wish
 router.patch("/cart_quanity_update", authMiddleWare.isValidUser, cartController.updateCartQuanity)
 router.patch("/cart_variation_update", authMiddleWare.isValidUser, cartController.updateCartVariation)
 router.delete("/clear_cart_items", authMiddleWare.isValidUser, cartController.clearCartItems)
-router.delete("/remove_cart_item/:cart_id/:product_id", authMiddleWare.isValidUser, cartController.deletCartItem)
+router.delete("/remove_cart_item/:cart_id/:product_id", authMiddleWare.isValidUser, authMiddleWare.isValidUser, cartController.deletCartItem)
 
 //Checkout related
 router.post("/place_invoice", authMiddleWare.isValidUser, invoiceController.placeInvoice)
@@ -100,7 +100,7 @@ router.post("/download_invoice", authMiddleWare.isValidUser, invoiceController.d
 router.post("/update_invoice_phone", authMiddleWare.isValidUser, invoiceController.updateInvoicePhone);
 router.post("/update_order_invoice", authMiddleWare.isValidUser, invoiceController.updateOrderInvoice);
 router.post("/buy_single_product", authMiddleWare.isValidUser, invoiceController.buySingleProduct)
-router.get("/get_invoice_summary/:invoice_id", authMiddleWare.isValidUser, invoiceController.getInviceSummery)
+router.get("/get_invoice_summary/:invoice_id", authMiddleWare.isValidUser,   invoiceController.getInviceSummery)
 
 // Category Related 
 router.get('/get_all_category', catgeoryController.getAllCategory)

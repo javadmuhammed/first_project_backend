@@ -35,7 +35,8 @@ let orderController = {
 
         commonHelper.getSingleOrder(order_id).then((order) => {
             res.send({ status: true, error: false, order: order })
-        }).catch((err) => {
+        }).catch((err) => { 
+            console.log(err)
             res.send({ status: false, error: true })
         })
     },

@@ -178,7 +178,7 @@ let userHelperMethod = {
     },
 
     updateEmailAddress: (email_address, userid) => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             let mailerConfig = emailConfig.emailConfigObject;
 
@@ -193,22 +193,28 @@ let userHelperMethod = {
                 new_email: email_address
             }
 
-
-            UserModal.updateOne({
-                _id: new mongoose.Types.ObjectId(userid)
-            }, {
-                email_token: updateData
-            }).then(async (success) => {
-
-                let mailTransport = nodeMailer.createTransport({
-                    service: mailerConfig.service,
-                    auth: mailerConfig.auth
-                })
-
-                let resetTokenUrl = "https://localhost:3000/reset_email_address/" + token;
+            try {
+                let checkOthers = await UserModal.findOne({ email: email_address });
+                if (checkOthers) {
+                    return reject("This email address already registered")
+                }
 
 
-                let text = `<!DOCTYPE html>
+                UserModal.updateOne({
+                    _id: new mongoose.Types.ObjectId(userid)
+                }, {
+                    email_token: updateData
+                }).then(async (success) => {
+
+                    let mailTransport = nodeMailer.createTransport({
+                        service: mailerConfig.service,
+                        auth: mailerConfig.auth
+                    })
+
+                    let resetTokenUrl = "https://localhost:3000/reset_email_address/" + token;
+
+
+                    let text = `<!DOCTYPE html>
                 <html>
                 <head>
                     <title>Email Reset Request</title>
@@ -242,21 +248,24 @@ let userHelperMethod = {
 
 
 
-                let mailOption = {
-                    from: mailerConfig.auth.user,
-                    to: email_address,
-                    subject: 'Email address reset option',
-                    html: text
-                };
+                    let mailOption = {
+                        from: mailerConfig.auth.user,
+                        to: email_address,
+                        subject: 'Email address reset option',
+                        html: text
+                    };
 
-                try {
-                    await mailTransport.sendMail(mailOption)
-                    resolve()
-                } catch (e) {
-                    reject()
-                }
+                    try {
+                        await mailTransport.sendMail(mailOption)
+                        resolve()
+                    } catch (e) {
+                        reject("Something went wrong")
+                    }
 
-            })
+                })
+            } catch (e) {
+                reject("Something went wrong")
+            }
 
 
         })
@@ -297,28 +306,39 @@ let userHelperMethod = {
 
 
     updatePhoneNumberRequest: (phone_number, user_id) => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             const randomNum = Math.random() * 9000
             const OtpNumber = Math.floor(1000 + randomNum)
             let expire_time = new Date().getTime() + 300000;
 
-            UserModal.updateOne({
-                _id: new mongoose.Types.ObjectId(user_id)
-            },
-                {
-                    phone_number_update: {
-                        otp_number: OtpNumber,
-                        otp_expire: expire_time,
-                        new_number: phone_number
-                    }
-                }).then(async () => {
-                    await smsAPI.sendOTPSMS("user", phone_number, OtpNumber)
-                    resolve("success")
-                }).catch((err) => {
-                    console.log(err)
-                    reject("wrong")
-                })
+            try {
+                let findAnthorUser = await UserModal.findOne({ mobile: phone_number })
+
+                if (findAnthorUser) {
+                    reject("This phone number is already in use")
+                } else {
+                    UserModal.updateOne({
+                        _id: new mongoose.Types.ObjectId(user_id)
+                    },
+                        {
+                            phone_number_update: {
+                                otp_number: OtpNumber,
+                                otp_expire: expire_time,
+                                new_number: phone_number
+                            }
+                        }).then(async () => {
+                            await smsAPI.sendOTPSMS("user", phone_number, OtpNumber)
+                            resolve("success")
+                        }).catch((err) => {
+                            console.log(err)
+                            reject("Something went wrong")
+                        })
+                }
+            } catch (e) {
+                console.log(e)
+                reject("Something went wrong")
+            }
         })
     },
 
@@ -1192,11 +1212,11 @@ let userHelperMethod = {
         try {
             let addressDetails = await addressModelDB.findOne({ _id: new mongoose.Types.ObjectId(address_id) })
             let productDetails = await commonHelper.getExactProductPrice(product_id, variation)
-            console.log(productDetails)
+
             if (productDetails) {
 
 
-                let totalPrice = productDetails.sale_price * quantity;
+                let totalPrice = productDetails.sale_price
                 let invoice_number = HelperMethod.createInvoiceID();
 
                 let OTPNumber = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
@@ -1217,7 +1237,11 @@ let userHelperMethod = {
                         product: product_id,
                         quantity: quantity,
                         priceAtPurchase: totalPrice,
-                        variation: variation
+                        variation: variation,
+                        category: productDetails.category,
+                        sub_total: productDetails.sale_price,
+                        total: productDetails.original_price,
+                        discount: productDetails.discount,
                     }],
                     address: addressDetails
                 }
@@ -1225,7 +1249,7 @@ let userHelperMethod = {
                 await new InvoiceModel(dataInvoicePlace).save()
                 await userExternalHelper.sendInvoiceOTP(phone, OTPNumber)
                 return invoice_number;
-            }else{
+            } else {
                 return new Error("Product not found");
             }
         } catch (e) {
@@ -1324,14 +1348,12 @@ let userHelperMethod = {
                             const processProducts = async () => {
                                 for (const products of invoiceData?.products) {
                                     try {
-                                        let findProduct = await ProductModel.findById(products.product);
+                                        let findProduct = await commonHelper.getExactProductPrice(products.product, products.variation, products.quantity) // ProductModel.findById(products.product);
 
-
-                                        console.log("Stock data", findProduct.stock, products.quantity)
                                         if (findProduct && (findProduct.stock >= 1 && findProduct.stock >= products.quantity)) {
 
 
-                                            let productPrice = commonHelper.getProductPriceByVariation(products.priceAtPurchase, products.variation)
+                                            let productPrice = findProduct.sale_price //commonHelper.getProductPriceByVariation(products.priceAtPurchase, products.variation)
 
                                             if (invoiceData?.coupen_applied !== null || invoiceData?.coupen_applied !== "" || invoiceData?.coupen_applied !== undefined) {
                                                 let originalAmount = invoiceData?.original_amount
@@ -1341,13 +1363,12 @@ let userHelperMethod = {
                                                 productPrice = (productPrice - coupenDiscountPerItem).toFixed(2);
                                             }
 
-                                            console.log(productPrice)
 
                                             ordersData.push({
                                                 order_id: HelperMethod.createOrderID(),
                                                 order_date: new Date(),
                                                 shipper_name: invoiceData?.address?.name,
-                                                total: productPrice * products.quantity,
+                                                total: findProduct.sale_price,
                                                 status: const_data.ORDER_STATUS.ORDER_RECEIVED,
                                                 address: invoiceData.address,
                                                 user_id: userid,
@@ -1357,7 +1378,10 @@ let userHelperMethod = {
                                                     product: products.product,
                                                     quantity: products.quantity,
                                                     variation: products.variation,
-                                                    category: findProduct.category
+                                                    category: findProduct.category,
+                                                    sub_total: findProduct.sale_price,
+                                                    total: findProduct.original_price,
+                                                    discount: findProduct.discount,
                                                 },
                                                 delivery_time: update_date.delivery_time,
                                                 invoice_number: invoiceId
@@ -1386,7 +1410,6 @@ let userHelperMethod = {
 
                             await processProducts();
 
-                            console.log(ordersData.length)
                             if (ordersData.length > 0) {
                                 try {
 

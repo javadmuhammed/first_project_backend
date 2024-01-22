@@ -108,7 +108,7 @@ let invoiceController = {
 
         let invoice_id = req.params.invoice_id;
         // let userid = req.params.userid;
-        let userid = req.body.userid;
+        let userid =  "65815559f07c4040ebee41c0" //req.body.userid;
 
         try {
             let data = await commonHelper.getInvoiceSummery(invoice_id, userid);
