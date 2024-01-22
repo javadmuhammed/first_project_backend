@@ -402,39 +402,43 @@ let adminHelper = {
         console.log(userData)
         return new Promise(async (resolve, reject) => {
 
-            let userName = "SAMPLE_ONE";
+            let userName = commonHelper.generateUserName(userData.first_name, userData.last_name);
+            if (userName) {
 
-            let { mobile, email } = userData;
-            let findUser = await UserModalDb.findOne({
-                $or: [
-                    { mobile: mobile, },
-                    { email: email, }
-                ]
-            })
+                let { mobile, email } = userData;
+                let findUser = await UserModalDb.findOne({
+                    $or: [
+                        { mobile: mobile, },
+                        { email: email, }
+                    ]
+                })
 
-            userData.username = userName;
+                userData.username = userName;
 
-            if (findUser) {
-                if (findUser.isOtpValidated) {
-                    reject("User already exist");
-                } else {
-                    userData._id = findUser._id
+                if (findUser) {
+                    if (findUser.isOtpValidated) {
+                        reject("User already exist");
+                    } else {
+                        userData._id = findUser._id
+                    }
                 }
-            }
 
-            if (userData?._id) {
-                UserModalDb.updateOne({ _id: userData._id }).then(() => {
-                    resolve("User updated success")
-                }).catch((err) => {
-                    reject("Something went wrong")
-                })
-            } else {
-                new UserModalDb(userData).save().then((user) => {
-                    resolve("User inserted success")
-                }).catch((err) => {
-                    console.log(err)
-                    reject("Something went wrong")
-                })
+                if (userData?._id) {
+                    UserModalDb.updateOne({ _id: userData._id }).then(() => {
+                        resolve("User updated success")
+                    }).catch((err) => {
+                        reject("Something went wrong")
+                    })
+                } else {
+                    new UserModalDb(userData).save().then((user) => {
+                        resolve("User inserted success")
+                    }).catch((err) => {
+                        console.log(err)
+                        reject("Something went wrong")
+                    })
+                }
+            }else{
+                reject("Something went wrong")
             }
         })
     },
@@ -702,8 +706,8 @@ let adminHelper = {
             ws.cell(rowIndex + 8, 1).string("Category ").style(addBgColor("#CDDC39"));
             ws.cell(rowIndex + 9, 1).string("Status ").style(addBgColor("#CDDC39"));
 
-           
-            ws.cell(rowIndex + 4, 2).string((indexRow-1).toString()).style(addBgColor("#CDDC99"));
+
+            ws.cell(rowIndex + 4, 2).string((indexRow - 1).toString()).style(addBgColor("#CDDC99"));
             ws.cell(rowIndex + 5, 2).string(sumOfTotal[0]?.total_amount.toString()).style(addBgColor("#CDDC99"));
             ws.cell(rowIndex + 6, 2).string((fromDate != null || fromDate != '') ? getValidDateFormat(fromDate) : "All Date").style(addBgColor("#CDDC99"));
             ws.cell(rowIndex + 7, 2).string((endDate != null || endDate != '') ? getValidDateFormat(endDate) : "All Date").style(addBgColor("#CDDC99"));

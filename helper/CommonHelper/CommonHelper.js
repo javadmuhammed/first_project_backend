@@ -876,7 +876,7 @@ let commonHelper = {
         })
     },
 
-    getProductPriceByVariation: (product_price, variation) => {
+    getProductPriceByVariation: function (product_price, variation) {
 
         variation = parseFloat(variation.toString())
         console.log(variation)
@@ -910,12 +910,122 @@ let commonHelper = {
         return price
     },
 
-    generateUserName: (firstName, lastName) => {
+    generateUserName: async (firstName, lastName) => {
 
-        let combination = firstName + lastName;
+        async function checkUserName(username) {
+            let findName = await UserModalDb.findOne({ username })
+            return findName ? true : false;
+        }
+
+
+        let index = 0; 
+
+        while (await checkUserName((firstName + lastName + index).toLowerCase())) {
+            index++;
+        }
 
         
-    }
+        return (firstName + lastName + index).toLowerCase()
+    },
+
+
+    getExactProductPrice: async function (product_id, variation) {
+
+        try {
+            let product = await ProductModel.findOne({ _id: new mongoose.Types.ObjectId(product_id), isDelete: false, status: true }).populate("category");
+            if (product) {
+                product.category_offer = (product?.category?.offer / 100) * product.sale_price;
+                product.sale_price = product.sale_price - product.category_offer;
+
+                if (variation == PRODUCT_VARIATION['500gm']) {
+                    product.sale_price = product.sale_price / 2
+                } else if (variation == PRODUCT_VARIATION['250gm']) {
+                    product.sale_price = product.sale_price / 4
+                } else if (variation == PRODUCT_VARIATION['2kg']) {
+                    product.sale_price = product.sale_price * 2
+                }
+
+                return product;
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.log(e)
+            return null;
+        }
+    },
+
+
+
+    getInvoiceSummery: async function (invoice_id, userid) {
+
+        let response = {
+            subTotal: 0,
+            total: 0,
+            discount: 0,
+            category_offer: 0
+        }
+
+        let invoiceData = await InvoiceModel.findOne({ invoice_number: invoice_id, userid: userid })
+        for (let productItem of invoiceData.products) {
+            let subTotal = 0;
+            let total = 0;
+            let discount = 0
+            let category_offer = 0
+
+            try {
+                let product = await this.getExactProductPrice(productItem?.product, productItem?.variation);
+                if (!product) {
+                    Promise.reject("Product not found");
+                }
+                console.log(product, productItem)
+
+                if (productItem?.variation == PRODUCT_VARIATION['500gm']) {
+                    subTotal = (product?.sale_price * productItem?.quantity) / 2
+                } else if (productItem?.variation == PRODUCT_VARIATION['250gm']) {
+                    subTotal = (product?.sale_price * productItem?.quantity) / 4
+                } else if (productItem?.variation == PRODUCT_VARIATION['2kg']) {
+                    subTotal = (product?.sale_price * productItem?.quantity) * 2
+                } else {
+                    subTotal = (product?.sale_price * productItem?.quantity)
+                }
+
+                if (productItem?.variation == PRODUCT_VARIATION['500gm']) {
+                    total = (product?.original_price * productItem?.quantity) / 2
+                } else if (productItem?.variation == PRODUCT_VARIATION['250gm']) {
+                    total = (product?.original_price * productItem?.quantity) / 4
+                } else if (productItem?.variation == PRODUCT_VARIATION['2kg']) {
+                    total = (product?.original_price * productItem?.quantity) * 2
+                } else {
+                    total = (product?.original_price * productItem?.quantity)
+                }
+
+                if (productItem?.variation == PRODUCT_VARIATION['500gm']) {
+                    discount = (product?.original_price * productItem?.quantity) - (product?.sale_price * productItem?.quantity) / 2
+                } else if (productItem?.variation == PRODUCT_VARIATION['250gm']) {
+                    discount = (product?.original_price * productItem?.quantity) - (product?.sale_price * productItem?.quantity) / 4
+                } else if (productItem?.variation == PRODUCT_VARIATION['2kg']) {
+                    discount = (product?.original_price * productItem?.quantity) - (product?.sale_price * productItem?.quantity) * 4
+                } else {
+                    discount = (product?.original_price * productItem?.quantity) - (product?.sale_price * productItem?.quantity)
+                }
+
+
+
+
+                response.subTotal += subTotal;
+                response.total += total;
+                response.discount += discount;
+                response.category_offer += product?.category_offer;
+
+            } catch (e) {
+                Promise.reject("Something went")
+            }
+        }
+        return response;
+
+    },
+
 
 
 }

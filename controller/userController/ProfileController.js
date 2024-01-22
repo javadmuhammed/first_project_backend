@@ -61,7 +61,8 @@ let profileController = {
         userHelperMethod.profilePicUpdate(profileImage, user_id).then((data) => {
             res.send({ status: true, error: false, profileImage: data, msg: "Profile Pic update success" })
         }).catch((err) => {
-            res.send({ status: false, error: true, msg: "Something went wrong" + err })
+            console.log(err)
+            res.send({ status: false, error: true, msg: "Something went wrong" })
         })
 
     },

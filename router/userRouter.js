@@ -76,7 +76,7 @@ router.delete('/delete_address/:address_id', authMiddleWare.isValidUser, address
 
 //Cart Related  
 router.get("/cart_pricelist", authMiddleWare.isValidUser, cartController.getCartPriceList)
-router.get("/get_cart_items", authMiddleWare.isValidUser, cartController.getCartItems)
+router.get("/get_cart_items",   authMiddleWare.isValidUser, cartController.getCartItems)
 router.post("/add_to_cart", authMiddleWare.isValidUser, cartController.addToCart)
 router.post("/wishlist_to_cart", authMiddleWare.isValidUser, cartController.wishlistToCart)
 router.patch("/cart_quanity_update", authMiddleWare.isValidUser, cartController.updateCartQuanity)
@@ -99,6 +99,8 @@ router.patch("/resend_checkout_otp", authMiddleWare.isValidUser, invoiceControll
 router.post("/download_invoice", authMiddleWare.isValidUser, invoiceController.downloadInvoice)
 router.post("/update_invoice_phone", authMiddleWare.isValidUser, invoiceController.updateInvoicePhone);
 router.post("/update_order_invoice", authMiddleWare.isValidUser, invoiceController.updateOrderInvoice);
+router.post("/buy_single_product", authMiddleWare.isValidUser, invoiceController.buySingleProduct)
+router.get("/get_invoice_summary/:invoice_id", authMiddleWare.isValidUser, invoiceController.getInviceSummery)
 
 // Category Related 
 router.get('/get_all_category', catgeoryController.getAllCategory)

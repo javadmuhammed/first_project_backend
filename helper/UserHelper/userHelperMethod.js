@@ -565,7 +565,7 @@ let userHelperMethod = {
 
 
     getWishListItems: (userid) => {
-        console.log("Wish" +  userid)
+        console.log("Wish" + userid)
         return new Promise((resolve, reject) => {
             WishlistModel.find({ user_id: userid }).populate("product_id").then((wishlistItems) => {
                 console.log("wishlist item " + wishlistItems)
@@ -579,7 +579,7 @@ let userHelperMethod = {
     deleteWishlist: (product_id, user_id) => {
         return new Promise((resolve, reject) => {
             WishlistModel.deleteOne({ user_id: user_id, product_id: new mongoose.Types.ObjectId(product_id) }).then((dt) => {
-               console.log(dt)
+                console.log(dt)
                 resolve()
             }).catch((err) => {
                 reject(err)
@@ -707,7 +707,7 @@ let userHelperMethod = {
 
         return new Promise((resolve, reject) => {
             try {
-                profileImage.mv("./public/web_images/" + profileName, (err) => {
+                profileImage.mv("./public/images/userProfile/" + profileName, (err) => {
                     if (err) {
                         reject(err)
                     } else {
@@ -724,6 +724,8 @@ let userHelperMethod = {
         })
 
     },
+
+
 
 
     getCartItems: (userid) => {
@@ -793,9 +795,9 @@ let userHelperMethod = {
                         }
                     }
                 },
-               
-                
-                 
+
+
+
                 {
                     $group: {
                         _id: null,
@@ -930,7 +932,7 @@ let userHelperMethod = {
                 },
                 {
                     $sort: {
-                        'cartData.productDetails.name': 1  
+                        'cartData.productDetails.name': 1
                     }
                 },
                 {
@@ -1126,7 +1128,7 @@ let userHelperMethod = {
 
 
             try {
-                let userDetails = await UserModal.findOne({ _id: new mongoose.Types.ObjectId(userid) })
+                // let userDetails = await UserModal.findOne({ _id: new mongoose.Types.ObjectId(userid) })
                 let addressDetails = await addressModelDB.findOne({ _id: new mongoose.Types.ObjectId(address_id) })
 
 
@@ -1186,41 +1188,50 @@ let userHelperMethod = {
         })
     },
 
-    // placeInvoice: (userid, address_id) => {
-    //     return new Promise((resolve, reject) => {
-    //         userHelperMethod.getCartItems(userid).then((response) => {
-    //             let data = response[0]
-
-    //             let totalPrice = data?.priceList?.total;
-    //             let dataInvoicePlace = {
-    //                 userid,
-    //                 invoice_number: HelperMethod.createInvoiceID(),
-    //                 invoice_date: new Date(),
-    //                 status: const_data.INVOICE_STATUS.PENDING,
-    //                 total_amount: totalPrice,
-    //                 address_id: new mongoose.Types.ObjectId(address_id),
-    //                 products: []
-    //             }
-
-    //             data?.cartData?.forEach((items) => {
-    //                 dataInvoicePlace.products.push({
-    //                     product: items.product_id,
-    //                     quantity: items.quantity,
-    //                     priceAtPurchase: ((items?.products?.sale_price) * (items.quantity))
-    //                 })
-    //             })
+    buySingleProduct: async (userid, phone, address_id, product_id, variation, quantity) => {
+        try {
+            let addressDetails = await addressModelDB.findOne({ _id: new mongoose.Types.ObjectId(address_id) })
+            let productDetails = await commonHelper.getExactProductPrice(product_id, variation)
+            console.log(productDetails)
+            if (productDetails) {
 
 
-    //             console.log(dataInvoicePlace)
+                let totalPrice = productDetails.sale_price * quantity;
+                let invoice_number = HelperMethod.createInvoiceID();
 
-    //             new InvoiceModel(dataInvoicePlace).save().then((suc) => {
-    //                 resolve(suc)
-    //             }).catch((err) => {
-    //                 reject(err)
-    //             })
-    //         })
-    //     })
-    // },
+                let OTPNumber = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+                let otp_expire = new Date().getTime() + 1800000
+
+                let dataInvoicePlace = {
+                    userid: userid,
+                    phone_number: phone,
+                    otp_number: OTPNumber,
+                    otp_expire,
+                    invoice_number,
+                    invoice_date: new Date(),
+                    status: const_data.INVOICE_STATUS.PENDING,
+                    total_amount: totalPrice,
+                    original_amount: totalPrice,
+                    order_placed: false,
+                    products: [{
+                        product: product_id,
+                        quantity: quantity,
+                        priceAtPurchase: totalPrice,
+                        variation: variation
+                    }],
+                    address: addressDetails
+                }
+
+                await new InvoiceModel(dataInvoicePlace).save()
+                await userExternalHelper.sendInvoiceOTP(phone, OTPNumber)
+                return invoice_number;
+            }else{
+                return new Error("Product not found");
+            }
+        } catch (e) {
+            return new Error(e);
+        }
+    },
 
     invoicePhoneVerification: (userid, otpField, phone, invoice_id) => {
         console.log(invoice_id, userid)
@@ -1835,10 +1846,11 @@ let userHelperMethod = {
 let userExternalHelper = {
     sendInvoiceOTP: (number, otp) => {
         console.log(number)
-        return new Promise((resolve, reject) => { 
+        return new Promise((resolve, reject) => {
             smsAPI.sendOTPSMS("User", number, otp).then(() => {
                 resolve("SMS Sended")
             }).catch((err) => {
+                console.log(err)
                 reject("SMS Sending Failed")
             })
             // twilioConfig.messages.create({

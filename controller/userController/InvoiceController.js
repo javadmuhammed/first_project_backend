@@ -83,6 +83,41 @@ let invoiceController = {
     },
 
 
+    buySingleProduct: (req, res) => {
+
+        let userid = req.body.userid;
+        let phone = req.body.phone;
+        let address_id = req.body.selected_address;
+        let product_id = req.body.product_id;
+        let variation = req.body.variation;
+        let quantity = req.body.quantity;
+
+        userHelper.buySingleProduct(userid, phone, address_id, product_id, variation, quantity).then((data) => {
+            console.log("Invoice ID :" + data)
+            res.send({ status: true, error: false, msg: "Invoice created success", invoice_number: data })
+        }).catch((err) => {
+            console.log(err)
+            res.send({ status: false, error: true, msg: "Something went wrong" })
+        })
+
+
+    },
+
+
+    getInviceSummery: async (req, res) => {
+
+        let invoice_id = req.params.invoice_id;
+        // let userid = req.params.userid;
+        let userid = req.body.userid;
+
+        try {
+            let data = await commonHelper.getInvoiceSummery(invoice_id, userid);
+            res.send({ status: true, error: false, summery: data })
+        } catch (e) {
+            res.send({ status: false, error: true, msg: "Invoice fetching failed" })
+        }
+    },
+
     updateInvoice: (req, res) => {
         let userid = req.body.userid;
         let invoiceId = req.body.invoice_id;
@@ -129,7 +164,7 @@ let invoiceController = {
         let invoice_id = req.body.invoice_id;
 
 
-        
+
 
         commonHelper.downloadInvoice(invoice_id).then((docs) => {
             try {
