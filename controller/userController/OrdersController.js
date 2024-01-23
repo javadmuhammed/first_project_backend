@@ -103,6 +103,7 @@ let orderController = {
         userHelperMethod.productReturnRequest(order_id, user_id).then((data) => {
             res.send({ status: true, error: false, msg: "Product return success" })
         }).catch((err) => {
+            console.log(err)
             res.send({ status: false, error: true, msg: err ?? "Something went wrong" })
         })
     }

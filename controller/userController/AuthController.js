@@ -150,10 +150,10 @@ let authController = {
         let email = req.body.email;
         let domain = req.body.domain;
 
-        UserModalDb.findOne({ email, is_delete: false }).then(async (user) => {
+        UserModalDb.findOne({ email, is_delete: { $ne: true } }).then(async (user) => {
             if (user) {
- 
-                if (user.status!=false) {
+
+                if (user.status != false) {
 
                     let token = crypto.randomBytes(64).toString("hex");
                     UserModalDb.updateOne(

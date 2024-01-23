@@ -386,6 +386,8 @@ let commonHelper = {
                     let dateToFormat = new Date(ordersData?.order_date)
                     let dateFormat = getValidDateFormat(dateToFormat)
 
+                  
+
                     function getDeliveryHTML() {
                         return `
                         <html lang="en">

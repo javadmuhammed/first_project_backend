@@ -2,9 +2,7 @@
 let jwt = require("jsonwebtoken");
 
 let authMiddleWare = {
-    isValidUser: (req, res, next) => {
-        console.log("Headers")
-        console.log(req.headers)
+    isValidUser: (req, res, next) => { 
 
         if ((req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') && (req.headers.reference)) {
             let access_token = req.headers.authorization.split(' ')[1];
@@ -12,21 +10,17 @@ let authMiddleWare = {
 
             try {
                 jwt.verify(access_token, process.env.JWT_SECRET, (err, data) => {
-                    if (err) { 
-                        console.log(access_token)
-                        console.log("ERR1")
+                    if (err) {  
                         res.status(403).send({ status: false, error: true, msg: "Unauthorized Access" })
                     } else {
                         req.body.userid = reference;
                         next();
                     }
                 })
-            } catch (e) {
-                console.log("ERR2")
+            } catch (e) { 
                 res.status(403).send({ status: false, error: true, msg: "Unauthorized Access" })
             }
-        } else {
-            console.log("ERR3")
+        } else { 
             res.status(403).send({ status: false, error: true, msg: "Unauthorized Access" })
         }
     },

@@ -1835,18 +1835,37 @@ let userHelperMethod = {
                 let orderDocument = await OrdersModalDb.findById(order_id);
                 if (user_id == orderDocument.user_id) {
                     if (orderDocument.status == const_data.ORDER_STATUS.DELIVERED) {
-                        OrdersModalDb.updateOne({ _id: new mongoose.Types.ObjectId(order_id) }, {
-                            $set: {
-                                status: const_data.ORDER_STATUS.RETURNED_REQUEST
-                            },
-                            $push: {
-                                shipping_history: {
-                                    status: const_data.ORDER_STATUS.RETURNED_REQUEST,
-                                    date: new Date()
-                                }
+
+
+                        let findOrderDelivedDate = orderDocument?.shipping_history?.find((each) => each.status == const_data.ORDER_STATUS.DELIVERED);
+                        if (findOrderDelivedDate) {
+
+                            let timeExpire = new Date(findOrderDelivedDate?.date)
+                            timeExpire.setDate(timeExpire.getDate() + 7)
+                            timeExpire = timeExpire.getTime()
+
+                            let currentTime = new Date().getTime();
+
+                            if (timeExpire > currentTime) {
+                                OrdersModalDb.updateOne({ _id: new mongoose.Types.ObjectId(order_id) }, {
+                                    $set: {
+                                        status: const_data.ORDER_STATUS.RETURNED_REQUEST
+                                    },
+                                    $push: {
+                                        shipping_history: {
+                                            status: const_data.ORDER_STATUS.RETURNED_REQUEST,
+                                            date: new Date()
+                                        }
+                                    }
+                                }).then(() => resolve(""))
+                                    .catch((err) => reject(null))
+                            } else {
+                                reject("Product return only possible with in 7 days")
                             }
-                        }).then(() => resolve(""))
-                            .catch((err) => reject(null))
+                        } else {
+                            reject("Something went wrong.")
+                        }
+
                     } else {
                         reject("Only delivered products can be returned.")
                     }
@@ -1854,10 +1873,41 @@ let userHelperMethod = {
                     reject("UnAuthorization")
                 }
             } catch (e) {
+                console.log(e)
                 reject(null)
             }
 
         })
+    },
+
+
+    getUserCoupenCode: async (userid) => {
+        try {
+
+            let coupens = [];
+ 
+
+            let couepnsFetch = await coupenModel.find({ status: true, valid_to: { $lt: new Date() } });
+            console.log(couepnsFetch)
+            if (couepnsFetch.length > 0) { 
+                for (let coupen of couepnsFetch) { 
+                    if (coupen?.individual_user && coupen?.individual_user?.length != 0) {
+                        if (userid) {
+                            if (coupen?.individual_user.includes(userid)) { 
+                                coupens.push(coupen)
+                            }
+                        } 
+                    } else { 
+                        coupens.push(coupen)
+                    }
+                }
+            } 
+
+            return coupens;
+        } catch (e) {
+            return []
+        }
+
     }
 
 

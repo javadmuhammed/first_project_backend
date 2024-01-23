@@ -109,7 +109,7 @@ router.get('/get_category_product/:category_id', catgeoryController.getCategoryP
 router.get('/get_top_category_product/:category_limit?/:product_limit?', catgeoryController.getTopCategoryProduct);
 
 // Coupen Related
-router.get("/get_all_coupencode", coupenController.getAllCoupenCode);
+router.get("/get_user_coupen_code", coupenController.getUserCoupenCode); 
 router.post("/apply_coupen/:coupen_code/:invoice_id", authMiddleWare.isValidUser, coupenController.applayCoupenCode)
 
 // Banner Related
