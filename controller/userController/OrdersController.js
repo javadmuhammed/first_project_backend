@@ -35,7 +35,8 @@ let orderController = {
 
         commonHelper.getSingleOrder(order_id).then((order) => {
             res.send({ status: true, error: false, order: order })
-        }).catch((err) => {
+        }).catch((err) => { 
+            console.log(err)
             res.send({ status: false, error: true })
         })
     },
@@ -102,6 +103,7 @@ let orderController = {
         userHelperMethod.productReturnRequest(order_id, user_id).then((data) => {
             res.send({ status: true, error: false, msg: "Product return success" })
         }).catch((err) => {
+            console.log(err)
             res.send({ status: false, error: true, msg: err ?? "Something went wrong" })
         })
     }

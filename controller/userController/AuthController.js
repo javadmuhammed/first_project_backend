@@ -24,7 +24,9 @@ let authController = {
             console.log(user)
             if (user) {
 
-                if (user?.status == "false" || user?.staus == false) {
+
+                console.log(user)
+                if (user?.status === "false" || user?.staus === false) {
                     return res.send({ status: false, error: true, msg: "This account has been suspended!" })
                 }
                 if (user?.is_delete) {
@@ -76,63 +78,68 @@ let authController = {
 
     userSignUpPost: async (req, res) => {
 
-        let { firstName, lastName, phoneNumber, email, invited_code } = req.body
-        let userName = "SAMPLE_ONE";
+        try {
+
+            let { firstName, lastName, phoneNumber, email, invited_code } = req.body
+            let userName = await commonHelper.generateUserName(firstName, lastName);
 
 
-        let otp = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000
-        let referal_code = new ShortUniqueId({ length: 10 }).rnd().toUpperCase();
+            let otp = Math.floor(Math.random() * (99999 - 10000 + 1)) + 10000
+            let referal_code = new ShortUniqueId({ length: 10 }).rnd().toUpperCase();
 
 
-        let userData = {
-            username: userName,
-            email: email,
-            mobile: phoneNumber,
-            first_name: firstName,
-            last_name: lastName,
-            otp: otp,
-            referal_code,
-            invited_code
-        }
-
-        UserModalDb.findOne({
-            $or: [
-                { email },
-                { mobile: phoneNumber },
-            ]
-        }).then(async (findUser) => {
-            console.log("User", findUser)
-
-            try {
-
-                if (findUser != null) {
-                    if (findUser.isOtpValidated) {
-                        return res.send({ status: false, error: true, msg: "User Already Exits" });
-                    } else {
-                        userData._id = findUser._id;
-                    }
-                }
-
-                userData.username = userName
-                let userSignUp = await userHelperMethod.userSignUp(userData);
-                let inviter_id = userData?._id ? userData?._id : userSignUp?._id;
-
-                if (userSignUp) {
-                    try {
-                        await userHelperMethod.sendOTPSignup(otp, email)
-                        let setReferalAmount = await userHelperMethod.insertReferalWalletAmount(invited_code, inviter_id);
-                        console.log(setReferalAmount)
-                        res.send({ status: true, user: userSignUp })
-                    } catch (e) {
-                        res.send({ status: false, error: true, msg: "OTP Sending Failed" })
-                    }
-                } else {
-                    res.send({ status: false, error: true, msg: "User Insertion Failed" })
-                }
-            } catch (e) {
-                res.send({ status: false, error: e.message })
+            let userData = {
+                username: userName,
+                email: email,
+                mobile: phoneNumber,
+                first_name: firstName,
+                last_name: lastName,
+                otp: otp,
+                referal_code,
+                invited_code
             }
-        })
+
+            UserModalDb.findOne({
+                $or: [
+                    { email },
+                    { mobile: phoneNumber },
+                ]
+            }).then(async (findUser) => {
+                console.log("User", findUser)
+
+                try {
+
+                    if (findUser != null) {
+                        if (findUser.isOtpValidated) {
+                            return res.send({ status: false, error: true, msg: "User Already Exits" });
+                        } else {
+                            userData._id = findUser._id;
+                        }
+                    }
+
+                    userData.username = userName
+                    let userSignUp = await userHelperMethod.userSignUp(userData);
+                    let inviter_id = userData?._id ? userData?._id : userSignUp?._id;
+
+                    if (userSignUp) {
+                        try {
+                            await userHelperMethod.sendOTPSignup(otp, email)
+                            let setReferalAmount = await userHelperMethod.insertReferalWalletAmount(invited_code, inviter_id);
+                            console.log(setReferalAmount)
+                            res.send({ status: true, user: userSignUp })
+                        } catch (e) {
+                            res.send({ status: false, error: true, msg: "OTP Sending Failed" })
+                        }
+                    } else {
+                        res.send({ status: false, error: true, msg: "User Insertion Failed" })
+                    }
+                } catch (e) {
+                    res.send({ status: false, error: e.message })
+                }
+            })
+        } catch (e) {
+            res.send({ status: false, error: "Something went wrong" })
+        }
 
     },
 
@@ -143,30 +150,35 @@ let authController = {
         let email = req.body.email;
         let domain = req.body.domain;
 
-        UserModalDb.findOne({ email }).then(async (user) => {
+        UserModalDb.findOne({ email, is_delete: { $ne: true } }).then(async (user) => {
             if (user) {
 
-                let token = crypto.randomBytes(64).toString("hex");
-                UserModalDb.updateOne(
-                    {
-                        _id: new mongoose.Types.ObjectId(user._id)
-                    },
-                    {
-                        $set: {
-                            token: token,
-                            tokenExpire: Date.now() + 300000
+                if (user.status != false) {
+
+                    let token = crypto.randomBytes(64).toString("hex");
+                    UserModalDb.updateOne(
+                        {
+                            _id: new mongoose.Types.ObjectId(user._id)
+                        },
+                        {
+                            $set: {
+                                token: token,
+                                tokenExpire: Date.now() + 300000
+                            }
                         }
-                    }
-                ).then((updated) => {
-                    console.log(updated)
-                    userHelperMethod.sendForgetPasswordEmail(email, domain + "/reset_password/" + token, user.username).then(() => {
-                        res.send({ status: true, error: false, msg: "Email successfuly sended" })
-                    }).catch(() => {
-                        res.send({ status: false, error: true, msg: "Email sending failed" })
+                    ).then((updated) => {
+                        console.log(updated)
+                        userHelperMethod.sendForgetPasswordEmail(email, domain + "/reset_password/" + token, user.username).then(() => {
+                            res.send({ status: true, error: false, msg: "Email successfuly sended" })
+                        }).catch(() => {
+                            res.send({ status: false, error: true, msg: "Email sending failed" })
+                        })
+                    }).catch((err) => {
+                        res.send({ status: false, error: true, msg: "Something Went Wrong " })
                     })
-                }).catch((err) => {
-                    res.send({ status: false, error: true, msg: "Something Went Wrong 1" })
-                })
+                } else {
+                    res.send({ status: false, error: true, msg: "Account Suspended! cannot reset password" })
+                }
 
             } else {
                 res.send({ status: false, error: true, msg: "Email address couldn't found" })

@@ -64,7 +64,7 @@ let InvoiceScheme = new mongoose.Schema({
         required: true
     },
     coupen_applied: {
-        type: String, 
+        type: String,
     },
     address: {
         type: addressModel,
@@ -76,7 +76,7 @@ let InvoiceScheme = new mongoose.Schema({
     },
     products: [
         {
-            product: { type: mongoose.Schema.Types.ObjectId, required: true },
+            product: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "product" },
             quantity: Number,
             priceAtPurchaseOriginal: Number,
             priceAtPurchase: Number,

@@ -6,7 +6,9 @@ let coupenController = {
 
     getAllCoupenCode: (req, res) => {
 
-        commonHelper.getAllCoupenCode().then((coupenList) => {
+        let user_id= req.body.userid;
+
+        commonHelper.getAllCoupenCode(user_id).then((coupenList) => {
             res.send({ status: true, error: false, coupen: coupenList })
         }).catch((err) => {
             res.send({ status: true, error: false })
@@ -26,7 +28,21 @@ let coupenController = {
         }
 
 
-    }
+    },
+
+    getUserCoupenCode: (req, res) => {
+
+        let user_id= req.body.userid;
+
+        userHelperMethod.getUserCoupenCode(user_id).then((coupenList) => {
+            res.send({ status: true, error: false, coupens: coupenList })
+        }).catch((err) => {
+            res.send({ status: true, error: false })
+        })
+    },
+
+
+    
 
 }
 

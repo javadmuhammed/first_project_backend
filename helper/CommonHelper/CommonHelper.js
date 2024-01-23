@@ -61,35 +61,21 @@ let commonHelper = {
         })
     },
 
-    getSingleOrder: (order_id) => {
-        console.log("Order ID" + order_id)
-        return new Promise((resolve, reject) => {
-            OrdersModalDb.aggregate([
-                {
-                    $match: {
-                        _id: new mongoose.Types.ObjectId(order_id)
-                    },
-                },
-                {
-                    $lookup: {
-                        localField: "products.product",
-                        foreignField: "_id",
-                        from: "products",
-                        as: "product"
-                    },
-                },
-                {
-                    $addFields: {
-                        product: { $arrayElemAt: ["$product", 0] }
-                    }
-                }
-            ]).then((data) => {
-                resolve(data[0])
-            }).catch((err) => {
-                reject(err)
-            })
-        })
-    },
+    // getSingleOrder: (order_id) => {
+    //     console.log("Order ID" + order_id)
+    //     return new Promise((resolve, reject) => {
+    //         OrdersModalDb.findOne({ _id: new mongoose.Types.ObjectId(order_id) }).then(async (data) => {
+    //             if (data) {
+    //                 data.products.product= await this.getExactProductPrice(data.products.product,data.products.variation,data.products.quantity);
+    //                 resolve(data[0])
+    //             }else{
+    //                 reject("No product found")
+    //             }
+    //         }).catch((err) => {
+    //             reject(err)
+    //         })
+    //     })
+    // },
 
     update_order: (order_id, data) => {
         console.log(order_id, data)
@@ -399,6 +385,8 @@ let commonHelper = {
 
                     let dateToFormat = new Date(ordersData?.order_date)
                     let dateFormat = getValidDateFormat(dateToFormat)
+
+                  
 
                     function getDeliveryHTML() {
                         return `
@@ -876,7 +864,7 @@ let commonHelper = {
         })
     },
 
-    getProductPriceByVariation: (product_price, variation) => {
+    getProductPriceByVariation: function (product_price, variation) {
 
         variation = parseFloat(variation.toString())
         console.log(variation)
@@ -910,12 +898,96 @@ let commonHelper = {
         return price
     },
 
-    generateUserName: (firstName, lastName) => {
+    generateUserName: async (firstName, lastName) => {
 
-        let combination = firstName + lastName;
+        async function checkUserName(username) {
+            let findName = await UserModalDb.findOne({ username })
+            return findName ? true : false;
+        }
 
-        
-    }
+
+        let index = 0;
+
+        while (await checkUserName((firstName + lastName + index).toLowerCase())) {
+            index++;
+        }
+
+
+        return (firstName + lastName + index).toLowerCase()
+    },
+
+
+    getExactProductPrice: async function (product_id, variation, quantity = 1) {
+
+        try {
+            let product = await ProductModel.findOne({ _id: new mongoose.Types.ObjectId(product_id), isDelete: false, status: true }).populate("category");
+            if (product) {
+                product.category_offer = (product?.category?.offer / 100) * product.sale_price;
+                product.sale_price = product.sale_price - product.category_offer;
+
+                console.log("Before manupilate", product)
+
+                if (variation == PRODUCT_VARIATION['500gm']) {
+                    product.sale_price = (product.sale_price / 2) * quantity
+                    product.original_price = (product.original_price / 2) * quantity
+                } else if (variation == PRODUCT_VARIATION['250gm']) {
+                    product.sale_price = (product.sale_price / 4) * quantity
+                    product.original_price = (product.original_price / 2) * quantity
+                } else if (variation == PRODUCT_VARIATION['2kg']) {
+                    product.sale_price = (product.sale_price * 2) * quantity;
+                    product.original_price = (product.original_price * 2) * quantity
+                }
+
+                product.discount = (product.original_price - product.sale_price)
+
+                return product;
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.log(e)
+            return null;
+        }
+    },
+
+
+
+    getInvoiceSummery: async function (invoice_id, userid) {
+
+        let response = {
+            subTotal: 0,
+            total: 0,
+            discount: 0,
+            category_offer: 0
+        }
+
+        let invoiceData = await InvoiceModel.findOne({ invoice_number: invoice_id, userid: userid })
+        console.log(invoiceData)
+        for (let productItem of invoiceData.products) {
+            let subTotal = 0;
+            let total = 0;
+            let discount = 0
+
+            try {
+                let product = await this.getExactProductPrice(productItem?.product, productItem?.variation, invoiceData.quantity);
+                console.log(product)
+                if (!product) {
+                    Promise.reject("Product not found");
+                }
+
+                response.subTotal += product.sale_price;
+                response.total += product.original_price;
+                response.discount += product.discount;
+                response.category_offer += product.category_offer;
+
+            } catch (e) {
+                Promise.reject("Something went")
+            }
+        }
+        return response;
+
+    },
+
 
 
 }

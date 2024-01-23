@@ -13,7 +13,7 @@ function sendOTPSMS(username, numbers, OTP) {
     let message = encodeURI(mess);
 
 
-   
+    // return Promise.resolve("suc")
 
     return axios.get(`https://app.smsbits.in/api/web?id=${api_id}&senderid=${senderid}&to=${numbers}&msg=${message}&port=TA&dltid=${dltid}&tempid=${tempid}`)
 }
