@@ -178,7 +178,7 @@ let userHelperMethod = {
     },
 
     updateEmailAddress: (email_address, userid) => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             let mailerConfig = emailConfig.emailConfigObject;
 
@@ -193,22 +193,28 @@ let userHelperMethod = {
                 new_email: email_address
             }
 
-
-            UserModal.updateOne({
-                _id: new mongoose.Types.ObjectId(userid)
-            }, {
-                email_token: updateData
-            }).then(async (success) => {
-
-                let mailTransport = nodeMailer.createTransport({
-                    service: mailerConfig.service,
-                    auth: mailerConfig.auth
-                })
-
-                let resetTokenUrl = "https://localhost:3000/reset_email_address/" + token;
+            try {
+                let checkOthers = await UserModal.findOne({ email: email_address });
+                if (checkOthers) {
+                    return reject("This email address already registered")
+                }
 
 
-                let text = `<!DOCTYPE html>
+                UserModal.updateOne({
+                    _id: new mongoose.Types.ObjectId(userid)
+                }, {
+                    email_token: updateData
+                }).then(async (success) => {
+
+                    let mailTransport = nodeMailer.createTransport({
+                        service: mailerConfig.service,
+                        auth: mailerConfig.auth
+                    })
+
+                    let resetTokenUrl = "https://localhost:3000/reset_email_address/" + token;
+
+
+                    let text = `<!DOCTYPE html>
                 <html>
                 <head>
                     <title>Email Reset Request</title>
@@ -242,21 +248,24 @@ let userHelperMethod = {
 
 
 
-                let mailOption = {
-                    from: mailerConfig.auth.user,
-                    to: email_address,
-                    subject: 'Email address reset option',
-                    html: text
-                };
+                    let mailOption = {
+                        from: mailerConfig.auth.user,
+                        to: email_address,
+                        subject: 'Email address reset option',
+                        html: text
+                    };
 
-                try {
-                    await mailTransport.sendMail(mailOption)
-                    resolve()
-                } catch (e) {
-                    reject()
-                }
+                    try {
+                        await mailTransport.sendMail(mailOption)
+                        resolve()
+                    } catch (e) {
+                        reject("Something went wrong")
+                    }
 
-            })
+                })
+            } catch (e) {
+                reject("Something went wrong")
+            }
 
 
         })
@@ -297,28 +306,39 @@ let userHelperMethod = {
 
 
     updatePhoneNumberRequest: (phone_number, user_id) => {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             const randomNum = Math.random() * 9000
             const OtpNumber = Math.floor(1000 + randomNum)
             let expire_time = new Date().getTime() + 300000;
 
-            UserModal.updateOne({
-                _id: new mongoose.Types.ObjectId(user_id)
-            },
-                {
-                    phone_number_update: {
-                        otp_number: OtpNumber,
-                        otp_expire: expire_time,
-                        new_number: phone_number
-                    }
-                }).then(async () => {
-                    await smsAPI.sendOTPSMS("user", phone_number, OtpNumber)
-                    resolve("success")
-                }).catch((err) => {
-                    console.log(err)
-                    reject("wrong")
-                })
+            try {
+                let findAnthorUser = await UserModal.findOne({ mobile: phone_number })
+
+                if (findAnthorUser) {
+                    reject("This phone number is already in use")
+                } else {
+                    UserModal.updateOne({
+                        _id: new mongoose.Types.ObjectId(user_id)
+                    },
+                        {
+                            phone_number_update: {
+                                otp_number: OtpNumber,
+                                otp_expire: expire_time,
+                                new_number: phone_number
+                            }
+                        }).then(async () => {
+                            await smsAPI.sendOTPSMS("user", phone_number, OtpNumber)
+                            resolve("success")
+                        }).catch((err) => {
+                            console.log(err)
+                            reject("Something went wrong")
+                        })
+                }
+            } catch (e) {
+                console.log(e)
+                reject("Something went wrong")
+            }
         })
     },
 
@@ -565,7 +585,7 @@ let userHelperMethod = {
 
 
     getWishListItems: (userid) => {
-        console.log("Wish" +  userid)
+        console.log("Wish" + userid)
         return new Promise((resolve, reject) => {
             WishlistModel.find({ user_id: userid }).populate("product_id").then((wishlistItems) => {
                 console.log("wishlist item " + wishlistItems)
@@ -579,7 +599,7 @@ let userHelperMethod = {
     deleteWishlist: (product_id, user_id) => {
         return new Promise((resolve, reject) => {
             WishlistModel.deleteOne({ user_id: user_id, product_id: new mongoose.Types.ObjectId(product_id) }).then((dt) => {
-               console.log(dt)
+                console.log(dt)
                 resolve()
             }).catch((err) => {
                 reject(err)
@@ -707,7 +727,7 @@ let userHelperMethod = {
 
         return new Promise((resolve, reject) => {
             try {
-                profileImage.mv("./public/web_images/" + profileName, (err) => {
+                profileImage.mv("./public/images/userProfile/" + profileName, (err) => {
                     if (err) {
                         reject(err)
                     } else {
@@ -724,6 +744,8 @@ let userHelperMethod = {
         })
 
     },
+
+
 
 
     getCartItems: (userid) => {
@@ -793,9 +815,9 @@ let userHelperMethod = {
                         }
                     }
                 },
-               
-                
-                 
+
+
+
                 {
                     $group: {
                         _id: null,
@@ -930,7 +952,7 @@ let userHelperMethod = {
                 },
                 {
                     $sort: {
-                        'cartData.productDetails.name': 1  
+                        'cartData.productDetails.name': 1
                     }
                 },
                 {
@@ -1126,7 +1148,7 @@ let userHelperMethod = {
 
 
             try {
-                let userDetails = await UserModal.findOne({ _id: new mongoose.Types.ObjectId(userid) })
+                // let userDetails = await UserModal.findOne({ _id: new mongoose.Types.ObjectId(userid) })
                 let addressDetails = await addressModelDB.findOne({ _id: new mongoose.Types.ObjectId(address_id) })
 
 
@@ -1186,41 +1208,54 @@ let userHelperMethod = {
         })
     },
 
-    // placeInvoice: (userid, address_id) => {
-    //     return new Promise((resolve, reject) => {
-    //         userHelperMethod.getCartItems(userid).then((response) => {
-    //             let data = response[0]
+    buySingleProduct: async (userid, phone, address_id, product_id, variation, quantity) => {
+        try {
+            let addressDetails = await addressModelDB.findOne({ _id: new mongoose.Types.ObjectId(address_id) })
+            let productDetails = await commonHelper.getExactProductPrice(product_id, variation)
 
-    //             let totalPrice = data?.priceList?.total;
-    //             let dataInvoicePlace = {
-    //                 userid,
-    //                 invoice_number: HelperMethod.createInvoiceID(),
-    //                 invoice_date: new Date(),
-    //                 status: const_data.INVOICE_STATUS.PENDING,
-    //                 total_amount: totalPrice,
-    //                 address_id: new mongoose.Types.ObjectId(address_id),
-    //                 products: []
-    //             }
-
-    //             data?.cartData?.forEach((items) => {
-    //                 dataInvoicePlace.products.push({
-    //                     product: items.product_id,
-    //                     quantity: items.quantity,
-    //                     priceAtPurchase: ((items?.products?.sale_price) * (items.quantity))
-    //                 })
-    //             })
+            if (productDetails) {
 
 
-    //             console.log(dataInvoicePlace)
+                let totalPrice = productDetails.sale_price
+                let invoice_number = HelperMethod.createInvoiceID();
 
-    //             new InvoiceModel(dataInvoicePlace).save().then((suc) => {
-    //                 resolve(suc)
-    //             }).catch((err) => {
-    //                 reject(err)
-    //             })
-    //         })
-    //     })
-    // },
+                let OTPNumber = Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000;
+                let otp_expire = new Date().getTime() + 1800000
+
+                let dataInvoicePlace = {
+                    userid: userid,
+                    phone_number: phone,
+                    otp_number: OTPNumber,
+                    otp_expire,
+                    invoice_number,
+                    invoice_date: new Date(),
+                    status: const_data.INVOICE_STATUS.PENDING,
+                    total_amount: totalPrice,
+                    original_amount: totalPrice,
+                    order_placed: false,
+                    products: [{
+                        product: product_id,
+                        quantity: quantity,
+                        priceAtPurchase: totalPrice,
+                        variation: variation,
+                        category: productDetails.category,
+                        sub_total: productDetails.sale_price,
+                        total: productDetails.original_price,
+                        discount: productDetails.discount,
+                    }],
+                    address: addressDetails
+                }
+
+                await new InvoiceModel(dataInvoicePlace).save()
+                await userExternalHelper.sendInvoiceOTP(phone, OTPNumber)
+                return invoice_number;
+            } else {
+                return new Error("Product not found");
+            }
+        } catch (e) {
+            return new Error(e);
+        }
+    },
 
     invoicePhoneVerification: (userid, otpField, phone, invoice_id) => {
         console.log(invoice_id, userid)
@@ -1313,14 +1348,12 @@ let userHelperMethod = {
                             const processProducts = async () => {
                                 for (const products of invoiceData?.products) {
                                     try {
-                                        let findProduct = await ProductModel.findById(products.product);
+                                        let findProduct = await commonHelper.getExactProductPrice(products.product, products.variation, products.quantity) // ProductModel.findById(products.product);
 
-
-                                        console.log("Stock data", findProduct.stock, products.quantity)
                                         if (findProduct && (findProduct.stock >= 1 && findProduct.stock >= products.quantity)) {
 
 
-                                            let productPrice = commonHelper.getProductPriceByVariation(products.priceAtPurchase, products.variation)
+                                            let productPrice = findProduct.sale_price //commonHelper.getProductPriceByVariation(products.priceAtPurchase, products.variation)
 
                                             if (invoiceData?.coupen_applied !== null || invoiceData?.coupen_applied !== "" || invoiceData?.coupen_applied !== undefined) {
                                                 let originalAmount = invoiceData?.original_amount
@@ -1330,13 +1363,12 @@ let userHelperMethod = {
                                                 productPrice = (productPrice - coupenDiscountPerItem).toFixed(2);
                                             }
 
-                                            console.log(productPrice)
 
                                             ordersData.push({
                                                 order_id: HelperMethod.createOrderID(),
                                                 order_date: new Date(),
                                                 shipper_name: invoiceData?.address?.name,
-                                                total: productPrice * products.quantity,
+                                                total: findProduct.sale_price,
                                                 status: const_data.ORDER_STATUS.ORDER_RECEIVED,
                                                 address: invoiceData.address,
                                                 user_id: userid,
@@ -1346,7 +1378,10 @@ let userHelperMethod = {
                                                     product: products.product,
                                                     quantity: products.quantity,
                                                     variation: products.variation,
-                                                    category: findProduct.category
+                                                    category: findProduct.category,
+                                                    sub_total: findProduct.sale_price,
+                                                    total: findProduct.original_price,
+                                                    discount: findProduct.discount,
                                                 },
                                                 delivery_time: update_date.delivery_time,
                                                 invoice_number: invoiceId
@@ -1375,7 +1410,6 @@ let userHelperMethod = {
 
                             await processProducts();
 
-                            console.log(ordersData.length)
                             if (ordersData.length > 0) {
                                 try {
 
@@ -1801,18 +1835,37 @@ let userHelperMethod = {
                 let orderDocument = await OrdersModalDb.findById(order_id);
                 if (user_id == orderDocument.user_id) {
                     if (orderDocument.status == const_data.ORDER_STATUS.DELIVERED) {
-                        OrdersModalDb.updateOne({ _id: new mongoose.Types.ObjectId(order_id) }, {
-                            $set: {
-                                status: const_data.ORDER_STATUS.RETURNED_REQUEST
-                            },
-                            $push: {
-                                shipping_history: {
-                                    status: const_data.ORDER_STATUS.RETURNED_REQUEST,
-                                    date: new Date()
-                                }
+
+
+                        let findOrderDelivedDate = orderDocument?.shipping_history?.find((each) => each.status == const_data.ORDER_STATUS.DELIVERED);
+                        if (findOrderDelivedDate) {
+
+                            let timeExpire = new Date(findOrderDelivedDate?.date)
+                            timeExpire.setDate(timeExpire.getDate() + 7)
+                            timeExpire = timeExpire.getTime()
+
+                            let currentTime = new Date().getTime();
+
+                            if (timeExpire > currentTime) {
+                                OrdersModalDb.updateOne({ _id: new mongoose.Types.ObjectId(order_id) }, {
+                                    $set: {
+                                        status: const_data.ORDER_STATUS.RETURNED_REQUEST
+                                    },
+                                    $push: {
+                                        shipping_history: {
+                                            status: const_data.ORDER_STATUS.RETURNED_REQUEST,
+                                            date: new Date()
+                                        }
+                                    }
+                                }).then(() => resolve(""))
+                                    .catch((err) => reject(null))
+                            } else {
+                                reject("Product return only possible with in 7 days")
                             }
-                        }).then(() => resolve(""))
-                            .catch((err) => reject(null))
+                        } else {
+                            reject("Something went wrong.")
+                        }
+
                     } else {
                         reject("Only delivered products can be returned.")
                     }
@@ -1820,10 +1873,41 @@ let userHelperMethod = {
                     reject("UnAuthorization")
                 }
             } catch (e) {
+                console.log(e)
                 reject(null)
             }
 
         })
+    },
+
+
+    getUserCoupenCode: async (userid) => {
+        try {
+
+            let coupens = [];
+ 
+
+            let couepnsFetch = await coupenModel.find({ status: true, valid_to: { $lt: new Date() } });
+            console.log(couepnsFetch)
+            if (couepnsFetch.length > 0) { 
+                for (let coupen of couepnsFetch) { 
+                    if (coupen?.individual_user && coupen?.individual_user?.length != 0) {
+                        if (userid) {
+                            if (coupen?.individual_user.includes(userid)) { 
+                                coupens.push(coupen)
+                            }
+                        } 
+                    } else { 
+                        coupens.push(coupen)
+                    }
+                }
+            } 
+
+            return coupens;
+        } catch (e) {
+            return []
+        }
+
     }
 
 
@@ -1835,10 +1919,11 @@ let userHelperMethod = {
 let userExternalHelper = {
     sendInvoiceOTP: (number, otp) => {
         console.log(number)
-        return new Promise((resolve, reject) => { 
+        return new Promise((resolve, reject) => {
             smsAPI.sendOTPSMS("User", number, otp).then(() => {
                 resolve("SMS Sended")
             }).catch((err) => {
+                console.log(err)
                 reject("SMS Sending Failed")
             })
             // twilioConfig.messages.create({

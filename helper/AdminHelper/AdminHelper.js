@@ -402,39 +402,43 @@ let adminHelper = {
         console.log(userData)
         return new Promise(async (resolve, reject) => {
 
-            let userName = "SAMPLE_ONE";
+            let userName = commonHelper.generateUserName(userData.first_name, userData.last_name);
+            if (userName) {
 
-            let { mobile, email } = userData;
-            let findUser = await UserModalDb.findOne({
-                $or: [
-                    { mobile: mobile, },
-                    { email: email, }
-                ]
-            })
+                let { mobile, email } = userData;
+                let findUser = await UserModalDb.findOne({
+                    $or: [
+                        { mobile: mobile, },
+                        { email: email, }
+                    ]
+                })
 
-            userData.username = userName;
+                userData.username = userName;
 
-            if (findUser) {
-                if (findUser.isOtpValidated) {
-                    reject("User already exist");
-                } else {
-                    userData._id = findUser._id
+                if (findUser) {
+                    if (findUser.isOtpValidated) {
+                        reject("User already exist");
+                    } else {
+                        userData._id = findUser._id
+                    }
                 }
-            }
 
-            if (userData?._id) {
-                UserModalDb.updateOne({ _id: userData._id }).then(() => {
-                    resolve("User updated success")
-                }).catch((err) => {
-                    reject("Something went wrong")
-                })
+                if (userData?._id) {
+                    UserModalDb.updateOne({ _id: userData._id }).then(() => {
+                        resolve("User updated success")
+                    }).catch((err) => {
+                        reject("Something went wrong")
+                    })
+                } else {
+                    new UserModalDb(userData).save().then((user) => {
+                        resolve("User inserted success")
+                    }).catch((err) => {
+                        console.log(err)
+                        reject("Something went wrong")
+                    })
+                }
             } else {
-                new UserModalDb(userData).save().then((user) => {
-                    resolve("User inserted success")
-                }).catch((err) => {
-                    console.log(err)
-                    reject("Something went wrong")
-                })
+                reject("Something went wrong")
             }
         })
     },
@@ -702,8 +706,8 @@ let adminHelper = {
             ws.cell(rowIndex + 8, 1).string("Category ").style(addBgColor("#CDDC39"));
             ws.cell(rowIndex + 9, 1).string("Status ").style(addBgColor("#CDDC39"));
 
-           
-            ws.cell(rowIndex + 4, 2).string((indexRow-1).toString()).style(addBgColor("#CDDC99"));
+
+            ws.cell(rowIndex + 4, 2).string((indexRow - 1).toString()).style(addBgColor("#CDDC99"));
             ws.cell(rowIndex + 5, 2).string(sumOfTotal[0]?.total_amount.toString()).style(addBgColor("#CDDC99"));
             ws.cell(rowIndex + 6, 2).string((fromDate != null || fromDate != '') ? getValidDateFormat(fromDate) : "All Date").style(addBgColor("#CDDC99"));
             ws.cell(rowIndex + 7, 2).string((endDate != null || endDate != '') ? getValidDateFormat(endDate) : "All Date").style(addBgColor("#CDDC99"));
@@ -722,6 +726,236 @@ let adminHelper = {
 
 
     generateSalesReportAsPdf: (fromDate, endDate, category, status) => {
+        return new Promise(async (resolve, reject) => {
+            try {
+
+
+
+                let orderFiltter = {
+                    _id: {
+                        $ne: null
+                    }
+                }
+
+                if (fromDate != '') {
+                    orderFiltter.order_date = {}
+                    orderFiltter.order_date.$gte = fromDate
+                }
+
+                if (endDate != '') {
+                    if (!orderFiltter.order_date) {
+                        orderFiltter.order_date = {}
+                    }
+                    orderFiltter.order_date.$lte = endDate;
+                }
+
+                if (status != '') {
+                    orderFiltter.status = status;
+                }
+
+                if (category != '') {
+                    orderFiltter["products.category"] = category;
+                }
+
+
+                let orderDatas = await OrdersModalDb.find(orderFiltter).populate("products.product")
+
+                const salesData = await OrdersModalDb.aggregate([
+                    { $match: orderFiltter },
+                    {
+                        $group: {
+                            _id: null,
+                            totalSum: { $sum: { $toDouble: '$total' } }
+                        }
+                    }
+                ]);
+
+
+
+
+                let fromDateStatus = fromDate == "" ? "All time" : fromDate
+                let endDateStatus = endDate == "" ? "All time" : endDate
+                let categoryStatus = category == "" ? "All time" : category
+                let numberOfSales = orderDatas.length;
+                let totalSalesPrice = salesData[0]?.totalSum
+
+                const salesRows = orderDatas.map(function (eachSales) {
+                    let dateToFormat = new Date(eachSales.order_date)
+                    let dateFormat = dateToFormat.getFullYear() + "/" + dateToFormat.getMonth() + "/" + dateToFormat.getDate()
+
+                    return ` <tr>
+                    <td>${dateFormat}</td>
+                    <td>${eachSales.shipper_name}</td>
+                    <td>${Number(eachSales.total).toFixed(2)}</td>
+                    <td>${eachSales.status}</td>
+                    <td>${eachSales.payment_type}</td>
+                    <td>${eachSales.products?.product?.name}</td>
+                    <td>${eachSales.products.quantity}</td>
+                    <td>${eachSales.products.variation}</td>
+                </tr>
+            `}).join(' ');
+
+
+
+
+                if (orderDatas.length > 0) {
+
+
+
+
+                    let htmlSales = `<!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Sales Report</title>
+                            <style>
+                                /* styles.css file */
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            background-color: #f5f5f5;
+                        }
+                        
+                        .container {
+                            width: 95%;
+                            margin: 20px auto;
+                        }
+                        
+                        h1 {
+                            text-align: center;
+                            margin-bottom: 20px;
+                        }
+                         
+                        
+                        .sales-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            background-color: #fff; 
+                        }
+                        
+                        .sales-table th,
+                        .sales-table td {
+                            padding: 12px;
+                            text-align: left;
+                             border: 1px solid #dddddd; /* Adding border for each cell */
+                        }
+                        
+                        .sales-table th {
+                            background-color: #acb9ca;
+                            font-weight: bold;
+                        }
+                        
+                        .sales-table tbody tr:nth-child(even) {
+                            background-color: #e9eff2;
+                        }
+                        
+                        .sales-table tbody tr:hover {
+                            background-color: #e0e0e0;
+                        }
+                         header {  
+                            margin-bottom: 20px;
+                        }
+                        
+                        h1 {
+                            text-align: center;
+                            margin-bottom: 10px;
+                        }
+                        
+                        .header-section {
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 20px;
+                        }
+                        
+                        .left-section,
+                        .right-section {
+                            width: 50%; 
+                        }
+                        
+                        .left-section h2,
+                        .right-section h2 {
+                            font-size: 18px;
+                            margin-bottom: 8px;
+                        }
+                        
+                        .left-section{
+                            text-align:left;
+                        }
+                        
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                  <header>
+                                    <h1>Sales Report</h1>
+                                    <div class="header-section">
+                                        <div class="left-section">
+                                            <h2>Sales</h2>
+                                            <p>Date From: ${fromDateStatus}</p>
+                                            <p>Date To: ${endDateStatus}</p>
+                                            <p>Category: ${categoryStatus}</p>
+                                        </div>
+                                        <div class="right-section">
+                                            <h2>Summary</h2>
+                                            <p>Total Number of Sales: ${numberOfSales}</p>
+                                            <p>Total Sales Amount: ${totalSalesPrice}</p>
+                                        </div>
+                                    </div>
+                                </header>
+                        
+                        
+                                <table class="sales-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order Date</th>
+                                            <th>Shipper Name</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Payment Type</th>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Variation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${salesRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </body>
+                        </html>
+                        `
+
+
+
+                    let htmlToPdf = new HTMLToPDF(htmlSales)
+                    const pdf = await htmlToPdf.convert({
+                        waitForNetworkIdle: true,
+                        browserOptions: {
+                            defaultViewport: {
+                                width: 4000, // Increase the width as needed
+                                height: 1080
+                            }
+                        },
+                        pdfOptions: {
+                            height: 1200,
+                            width: 2000, // Increase the width as needed
+                            timeout: 0
+                        }
+                    });
+                    resolve(pdf)
+                } else {
+                    reject("No invoice found")
+                }
+
+            } catch (e) {
+                reject(e)
+            }
+        });
+    },
+
+
+    generateProductSalesReport: (product_id) => {
         return new Promise(async (resolve, reject) => {
             try {
 

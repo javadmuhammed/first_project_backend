@@ -50,7 +50,7 @@ let addressController = {
         let address = req.body.address;
 
 
-        userHelperMethod.updateAddress(address, user_id, address_id).then((data) => {
+        userHelperMethod.updateAddress(address, user_id, address_id).then((data) => { 
             res.send({ status: true, error: false })
         }).catch((err) => {
             res.send({ status: false, error: true, msg: "Something went wrong" })

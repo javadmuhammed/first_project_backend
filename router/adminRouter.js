@@ -16,6 +16,7 @@ const { generateSalesReport, generateSalesReportAsPdf } = require("../controller
 const { siteStatic, updateBasicSiteSettings, getSiteBasicSettings } = require("../controller/adminController/SiteRelated");
 const { getSingleVendor } = require("../controller/adminController/VendorRelated");
 const { addCoupenCode, getAllCoupenCode, deleteCoupenCode, editCoupenCode, getSingleCoupen } = require("../controller/adminController/CoupenRelated");
+const { generateProductSalesReport } = require("../helper/AdminHelper/AdminHelper");
 const router = express.Router();
 
 
@@ -90,6 +91,7 @@ router.put("/edit_banner", authMiddleWare.isValidAdmin, editBanner)
 // Sales Report
 router.post("/generate_sales_report", authMiddleWare.isValidAdmin, generateSalesReport);
 router.post("/generate_sales_report_pdf", authMiddleWare.isValidAdmin, generateSalesReportAsPdf);
+router.post("/generate_prodcut_sales_report", authMiddleWare.isValidAdmin, generateProductSalesReport);
 
 // Vendor Related
 router.get("/get_single_vendor", authMiddleWare.isValidAdmin, getSingleVendor)
