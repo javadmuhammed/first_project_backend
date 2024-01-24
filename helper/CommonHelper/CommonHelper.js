@@ -279,45 +279,45 @@ let commonHelper = {
         })
     },
 
-    getSingleOrder: (order_id) => {
-        return new Promise((resolve, reject) => {
-            OrdersModalDb.aggregate([
-                {
-                    $match: {
-                        _id: new mongoose.Types.ObjectId(order_id)
+    getSingleOrder: function (order_id) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+
+                let findOrder = await OrdersModalDb.aggregate([
+                    {
+                        $match: {
+                            _id: new mongoose.Types.ObjectId(order_id)
+                        }
+                    },
+                    {
+                        $lookup: {
+                            localField: "user_id",
+                            foreignField: "_id",
+                            from: "users",
+                            as: "user"
+                        }
+                    },
+                    {
+                        $addFields: {
+                            user: { $arrayElemAt: ["$user", 0] }
+                        }
                     }
-                },
-                {
-                    $lookup: {
-                        localField: "user_id",
-                        foreignField: "_id",
-                        from: "users",
-                        as: "user"
-                    }
-                },
-                {
-                    $lookup: {
-                        localField: "products.product",
-                        foreignField: "_id",
-                        from: "products",
-                        as: "product"
-                    }
-                },
-                {
-                    $addFields: {
-                        product: { $arrayElemAt: ["$product", 0] }
-                    }
-                },
-                {
-                    $addFields: {
-                        user: { $arrayElemAt: ["$user", 0] }
-                    }
-                }
-            ]).then((order) => {
-                resolve(order[0])
-            }).catch((err) => {
-                reject(err)
-            })
+                ]);
+
+                findOrder = findOrder[0]
+
+                let getExactProduct = await this.getExactProductPrice(findOrder?.products?.product, findOrder?.products?.variation, findOrder?.products?.quantity);
+
+                findOrder.products.product = getExactProduct;
+
+                console.log(findOrder)
+
+                resolve(findOrder)
+            } catch (e) {
+                console.log(e)
+                reject("Wrong")
+            }
         })
     },
 
@@ -386,7 +386,7 @@ let commonHelper = {
                     let dateToFormat = new Date(ordersData?.order_date)
                     let dateFormat = getValidDateFormat(dateToFormat)
 
-                  
+
 
                     function getDeliveryHTML() {
                         return `
@@ -936,6 +936,9 @@ let commonHelper = {
                 } else if (variation == PRODUCT_VARIATION['2kg']) {
                     product.sale_price = (product.sale_price * 2) * quantity;
                     product.original_price = (product.original_price * 2) * quantity
+                } else {
+                    product.sale_price = product.sale_price * quantity;
+                    product.original_price = product.original_price * quantity
                 }
 
                 product.discount = (product.original_price - product.sale_price)

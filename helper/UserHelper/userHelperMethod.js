@@ -1349,7 +1349,7 @@ let userHelperMethod = {
                                 for (const products of invoiceData?.products) {
                                     try {
                                         let findProduct = await commonHelper.getExactProductPrice(products.product, products.variation, products.quantity) // ProductModel.findById(products.product);
-
+                                        
                                         if (findProduct && (findProduct.stock >= 1 && findProduct.stock >= products.quantity)) {
 
 

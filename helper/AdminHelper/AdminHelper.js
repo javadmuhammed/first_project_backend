@@ -1288,7 +1288,7 @@ let adminHelper = {
 
 
             } else if (chart_type == CHART_TYPE.YEARLY) {
-                let currentDate = new Date(start_date)
+                let currentDate =  start_date
 
                 while (currentDate <= end_date) {
                     let dates = currentDate.getFullYear();
