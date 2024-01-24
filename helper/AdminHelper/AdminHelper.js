@@ -626,7 +626,9 @@ let adminHelper = {
                 ws.cell(1, columnIndex++).string(eachColumn)
             })
 
-            let orderFiltter = {}
+            let orderFiltter = {
+                status: ORDER_STATUS.DELIVERED
+            }
 
             if (fromDate) {
                 if (!orderFiltter.order_date) {
@@ -732,9 +734,7 @@ let adminHelper = {
 
 
                 let orderFiltter = {
-                    _id: {
-                        $ne: null
-                    }
+                    status: ORDER_STATUS.DELIVERED
                 }
 
                 if (fromDate != '') {

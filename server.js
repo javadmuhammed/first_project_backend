@@ -40,6 +40,6 @@ app.use("/", userRouter);
 app.use("/admin", adminRouter)
 
 
-app.listen(3000, () => {
+app.listen(7000, () => {
     console.log("Server started at port 3000")
 })

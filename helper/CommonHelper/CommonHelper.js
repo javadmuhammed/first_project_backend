@@ -965,14 +965,14 @@ let commonHelper = {
         }
 
         let invoiceData = await InvoiceModel.findOne({ invoice_number: invoice_id, userid: userid })
-        console.log(invoiceData)
+       
         for (let productItem of invoiceData.products) {
             let subTotal = 0;
             let total = 0;
             let discount = 0
 
             try {
-                let product = await this.getExactProductPrice(productItem?.product, productItem?.variation, invoiceData.quantity);
+                let product = await this.getExactProductPrice(productItem?.product, productItem?.variation, productItem.quantity);
                 console.log(product)
                 if (!product) {
                     Promise.reject("Product not found");

@@ -91,7 +91,7 @@ router.put("/edit_banner", authMiddleWare.isValidAdmin, editBanner)
 // Sales Report
 router.post("/generate_sales_report", authMiddleWare.isValidAdmin, generateSalesReport);
 router.post("/generate_sales_report_pdf", authMiddleWare.isValidAdmin, generateSalesReportAsPdf);
-router.post("/generate_prodcut_sales_report", authMiddleWare.isValidAdmin, generateProductSalesReport);
+// router.post("/generate_prodcut_sales_report", authMiddleWare.isValidAdmin, generateProductSalesReport);
 
 // Vendor Related
 router.get("/get_single_vendor", authMiddleWare.isValidAdmin, getSingleVendor)
