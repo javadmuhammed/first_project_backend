@@ -44,7 +44,7 @@ let cartController = {
 
     getCartItems: (req, res) => {
         let userid =  req.body.userid;
-        console.log("Cart USerid", userid)
+        // console.log("Cart USerid", userid)
         userHelper.getCartItems(userid).then((data) => {
             res.send({ status: true, error: false, cart: data })
         }).catch((err) => {

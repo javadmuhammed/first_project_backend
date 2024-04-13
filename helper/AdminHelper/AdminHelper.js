@@ -257,8 +257,14 @@ let adminHelper = {
                         foreignField: " _id ",
                         as: 'customer'
                     }
+                },
+                {
+                    $sort :{
+                        order_date: -1
+                    }
                 }
             ]).then((order) => {
+                console.log(order)
                 resolve(order)
             }).catch((err) => {
                 reject(err)
@@ -1187,7 +1193,7 @@ let adminHelper = {
 
     getSiteStatics: (start_date, end_date, chart_type) => {
 
-        // chart_type = CHART_TYPE.DAILY;
+        chart_type = CHART_TYPE.YEARLY;
 
 
         return new Promise(async (resolve, reject) => {
@@ -1204,6 +1210,8 @@ let adminHelper = {
             } else {
                 end_date = new Date();
             }
+
+            console.log(start_date +  "  " + end_date)
 
 
             let userGraph = [];
@@ -1288,7 +1296,7 @@ let adminHelper = {
 
 
             } else if (chart_type == CHART_TYPE.YEARLY) {
-                let currentDate =  start_date
+                let currentDate =  new Date(start_date)
 
                 while (currentDate <= end_date) {
                     let dates = currentDate.getFullYear();
@@ -1439,6 +1447,9 @@ let adminHelper = {
                         findOrder.count++;
                     }
                 })
+
+
+                console.log(userData)
 
                 let outPut = {
                     users_graph: userGraph,

@@ -21,6 +21,7 @@ const coupenModel = require("../../modals/CoupenModel");
 const BannerModel = require("../../modals/BannerModel");
 const { getValidDateFormat } = require("../FunctionHelper/Helper");
 const HTMLToPDF = require("convert-html-to-pdf").default
+const OrderProduct = require("../../modals/OrderProductModel")
 
 let commonHelper = {
     findSingleUser: function (userid) {
@@ -307,8 +308,11 @@ let commonHelper = {
 
                 findOrder = findOrder[0]
 
-                let getExactProduct = await this.getExactProductPrice(findOrder?.products?.product, findOrder?.products?.variation, findOrder?.products?.quantity);
 
+                console.log(order_id)
+                let getExactProduct = await OrderProduct.findOne({ order_id: findOrder.order_id }) //this.getExactProductPrice(findOrder?.products?.product, findOrder?.products?.variation, findOrder?.products?.quantity);
+
+                console.log(getExactProduct)
                 findOrder.products.product = getExactProduct;
 
                 console.log(findOrder)
@@ -917,15 +921,13 @@ let commonHelper = {
     },
 
 
-    getExactProductPrice: async function (product_id, variation, quantity = 1) {
+    getExactOrderProductPrice: async function (product_id, variation, quantity = 1) {
 
         try {
             let product = await ProductModel.findOne({ _id: new mongoose.Types.ObjectId(product_id), isDelete: false, status: true }).populate("category");
             if (product) {
                 product.category_offer = (product?.category?.offer / 100) * product.sale_price;
                 product.sale_price = product.sale_price - product.category_offer;
-
-                console.log("Before manupilate", product)
 
                 if (variation == PRODUCT_VARIATION['500gm']) {
                     product.sale_price = (product.sale_price / 2) * quantity
@@ -953,6 +955,51 @@ let commonHelper = {
         }
     },
 
+    getExactProductPrice: async function (product_id, variation, quantity = 1) {
+
+
+        try {
+            let product = await ProductModel.findOne({ _id: new mongoose.Types.ObjectId(product_id), isDelete: false, status: true }).populate("category");
+            product = JSON.parse(JSON.stringify(product))
+            if (product) {
+
+                product.category_offer = (product?.category?.offer / 100) * product.sale_price;
+                product.order_sale_price = product.sale_price - product.category_offer;
+
+                console.log(product.order_sale_price)
+
+                console.log("Before manupilate", product)
+
+
+
+                if (variation == PRODUCT_VARIATION['500gm']) {
+                    product.order_sale_price = (product.order_sale_price / 2) * quantity
+                    product.original_price = (product.original_price / 2) * quantity
+                } else if (variation == PRODUCT_VARIATION['250gm']) {
+                    product.order_sale_price = (product.order_sale_price / 4) * quantity
+                    product.original_price = (product.original_price / 2) * quantity
+                } else if (variation == PRODUCT_VARIATION['2kg']) {
+                    product.order_sale_price = (product.order_sale_price * 2) * quantity;
+                    product.original_price = (product.original_price * 2) * quantity
+                } else {
+                    product.order_sale_price = product.order_sale_price * quantity;
+                    product.original_price = product.original_price * quantity
+                }
+
+                product.discount = (product.original_price - product.order_sale_price)
+
+                console.log("Product return")
+                console.log(product)
+                return product;
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.log(e)
+            return null;
+        }
+    },
+
 
 
     getInvoiceSummery: async function (invoice_id, userid) {
@@ -961,15 +1008,15 @@ let commonHelper = {
             subTotal: 0,
             total: 0,
             discount: 0,
-            category_offer: 0
+            category_offer: 0,
+            coupen_discount: 0
         }
 
         let invoiceData = await InvoiceModel.findOne({ invoice_number: invoice_id, userid: userid })
-       
+        response.coupen_discount = invoiceData.coupen_discount
+
+
         for (let productItem of invoiceData.products) {
-            let subTotal = 0;
-            let total = 0;
-            let discount = 0
 
             try {
                 let product = await this.getExactProductPrice(productItem?.product, productItem?.variation, productItem.quantity);
@@ -978,7 +1025,7 @@ let commonHelper = {
                     Promise.reject("Product not found");
                 }
 
-                response.subTotal += product.sale_price;
+                response.subTotal += product.order_sale_price;
                 response.total += product.original_price;
                 response.discount += product.discount;
                 response.category_offer += product.category_offer;

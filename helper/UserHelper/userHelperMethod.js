@@ -21,6 +21,7 @@ const coupenModel = require("../../modals/CoupenModel");
 const WalletTopUpModel = require("../../modals/WalletTopUp");
 const { default: ShortUniqueId } = require("short-unique-id");
 const { generateIndividualCoupen } = require("../AdminHelper/AdminHelper");
+const OrderProduct = require("../../modals/OrderProductModel")
 
 
 let userHelperMethod = {
@@ -1133,14 +1134,29 @@ let userHelperMethod = {
     },
 
 
-    getSingleInvoice: (invoice_number, userid) => {
-        return new Promise((resolve, reject) => {
-            InvoiceModel.findOne({ invoice_number: invoice_number, userid: new mongoose.Types.ObjectId(userid) }).then((invoice) => {
-                resolve(invoice)
-            }).catch((err) => {
-                reject(err);
-            })
-        })
+    getSingleInvoice: async (invoice_number, userid) => {
+
+        try {
+            let getInvoiceSummery = await commonHelper.getInvoiceSummery(invoice_number, userid)
+          
+            let invoiceData = await InvoiceModel.aggregate([
+                {
+                    $match: { invoice_number: invoice_number, userid: new mongoose.Types.ObjectId(userid) }
+                },
+                {
+                    $addFields: {
+                        invoice_summary: getInvoiceSummery
+                    }
+                }
+            ])
+
+            console.log("Summary product is");
+            console.log(invoiceData)
+
+            return invoiceData[0];
+        } catch (e) {
+            return new Error("Something Went Wrong")
+        } 
     },
 
     placeInvoice: (phone, userid, address_id) => {
@@ -1343,13 +1359,14 @@ let userHelperMethod = {
 
                             let ordersData = [];
                             let productUpdate = [];
+                            let orderProduct = []
 
 
                             const processProducts = async () => {
                                 for (const products of invoiceData?.products) {
                                     try {
-                                        let findProduct = await commonHelper.getExactProductPrice(products.product, products.variation, products.quantity) // ProductModel.findById(products.product);
-                                        
+                                        let findProduct = await commonHelper.getExactOrderProductPrice(products.product, products.variation, products.quantity) // ProductModel.findById(products.product);
+
                                         if (findProduct && (findProduct.stock >= 1 && findProduct.stock >= products.quantity)) {
 
 
@@ -1363,9 +1380,13 @@ let userHelperMethod = {
                                                 productPrice = (productPrice - coupenDiscountPerItem).toFixed(2);
                                             }
 
+                                            const order_id = HelperMethod.createOrderID()
+                                            console.log("Find product : " + findProduct)
+
+                                            orderProduct.push({ ...findProduct._doc, order_id: order_id })
 
                                             ordersData.push({
-                                                order_id: HelperMethod.createOrderID(),
+                                                order_id: order_id,
                                                 order_date: new Date(),
                                                 shipper_name: invoiceData?.address?.name,
                                                 total: findProduct.sale_price,
@@ -1408,7 +1429,12 @@ let userHelperMethod = {
                                 }
                             };
 
+
+
                             await processProducts();
+
+                            console.log("Orderd product");
+                            console.log(orderProduct)
 
                             if (ordersData.length > 0) {
                                 try {
@@ -1432,9 +1458,9 @@ let userHelperMethod = {
                                             try {
                                                 await CartModel.deleteMany({ user_id: new mongoose.Types.ObjectId(userid) })
                                                 await ProductModel.bulkWrite(productUpdate)
+                                                await OrderProduct.insertMany(orderProduct)
 
                                                 if (number_of_user_order == 0) {
-                                                    console.log("Zero Orders")
                                                     await generateIndividualCoupen(userid, "First Order", "First Order Coupen Code", const_data.FIRST_ORDER_COUEPN_OFFER, false, 1000, 10000, new Date(), new Date().setDate(new Date().getDate() + 10))
                                                 } else {
                                                     if (invoiceData?.total_amount >= 100) {
@@ -1456,7 +1482,6 @@ let userHelperMethod = {
                                                 resolve({ coupen: coupenAmount != 0, msg: "Product orderd success" });
                                             }
                                         }).catch((err) => {
-                                            console.log(err)
                                             reject("Product order failed")
                                         })
                                     }
@@ -1464,17 +1489,14 @@ let userHelperMethod = {
                                     console.log(e)
                                 }
                             } else {
-                                console.log("No Product found worked")
                                 reject("No product available")
                             }
 
                         } else {
-                            console.log("Invoice update failed")
                             reject("Invoice updated")
                         }
 
                     }).catch((err) => {
-                        console.log(err)
                         reject("Invoice updation failed")
                     })
                 }
@@ -1806,6 +1828,7 @@ let userHelperMethod = {
                             let findTotalAmount = findInvoice.original_amount;
                             let suppose_discount = findTotalAmount - ((discount_percentage / 100) * findTotalAmount);
 
+                            findInvoice.coupen_discount = suppose_discount
                             findInvoice.total_amount = suppose_discount
                             findInvoice.coupen_applied = coupen_code;
                             findCoupenCode.used_count++;
@@ -1885,23 +1908,23 @@ let userHelperMethod = {
         try {
 
             let coupens = [];
- 
+
 
             let couepnsFetch = await coupenModel.find({ status: true, valid_to: { $lt: new Date() } });
             console.log(couepnsFetch)
-            if (couepnsFetch.length > 0) { 
-                for (let coupen of couepnsFetch) { 
+            if (couepnsFetch.length > 0) {
+                for (let coupen of couepnsFetch) {
                     if (coupen?.individual_user && coupen?.individual_user?.length != 0) {
                         if (userid) {
-                            if (coupen?.individual_user.includes(userid)) { 
+                            if (coupen?.individual_user.includes(userid)) {
                                 coupens.push(coupen)
                             }
-                        } 
-                    } else { 
+                        }
+                    } else {
                         coupens.push(coupen)
                     }
                 }
-            } 
+            }
 
             return coupens;
         } catch (e) {

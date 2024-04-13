@@ -66,6 +66,9 @@ let InvoiceScheme = new mongoose.Schema({
     coupen_applied: {
         type: String,
     },
+    coupen_discount: {
+        type: Number,
+    },
     address: {
         type: addressModel,
         default: null,

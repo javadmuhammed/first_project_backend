@@ -33,7 +33,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static('public'))
 
-let port = process.env.BACK_END_PORT || 3000;
+let port = process.env.BACK_END_PORT || 7000;
 console.log(process.env.MONGO_URI)
 
 app.use("/", userRouter);
@@ -41,5 +41,5 @@ app.use("/admin", adminRouter)
 
 
 app.listen(7000, () => {
-    console.log("Server started at port 3000")
+    console.log("Server started at port 7000")
 })
